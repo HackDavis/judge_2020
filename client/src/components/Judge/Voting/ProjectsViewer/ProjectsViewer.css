@@ -1,0 +1,48 @@
+div.project-row {
+  display: flex;
+  flex-direction: row;
+  padding: 0.25em;
+}
+
+span.project-name {
+  flex: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+span.project-status {
+  box-sizing: border-box;
+  justify-content: center;
+  align-items: center;
+  flex: none;
+  margin-left: 2em;
+  background: #ccc;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #333;
+  display: inline-flex;
+  font-size: 0.65em;
+  font-weight: 700;
+  padding: 2px 5px;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  width: 70px;
+}
+
+span.project-status.to-do {
+  
+}
+
+span.project-status.done {
+  background: #07ce00;
+  color: #ffffff;
+  border: #07ce00;
+}
+
+span.project-status.skipped {
+  background: #ffdf51;
+  color: #7e6b00;
+  border: #ffdf51;
+}

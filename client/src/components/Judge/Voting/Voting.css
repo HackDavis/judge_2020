@@ -1,0 +1,7 @@
+.voting-container {
+  height: calc(100vh - 3.25rem);
+}
+
+.voting-column.right-panel {
+  max-height: calc(100vh - 3.25rem);
+}
