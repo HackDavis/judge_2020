@@ -36,14 +36,9 @@ class Voting extends React.Component {
   }
 
   gotoNextProject = async () => {
+    // TOOD: SKIP BUG. Can't edit scores of next project
     const nextProjectId = await this.findNextProject();
     if (!nextProjectId) return;
-
-    const currProjectId = this.state.currProjectId;
-    if (!this.projects[currProjectId].done) {
-      this.projects[currProjectId].skip = true;
-    }
-    
 
     this.setState({
       currProjectId: nextProjectId,
@@ -53,12 +48,18 @@ class Voting extends React.Component {
     console.log(this.projects[nextProjectId]);
   }
 
-  findNextProject = async () =>  {
+  updateQueueStatus = async () => {
     const votes = await api.getVotes();
     votes.forEach((vote) => {
+      console.log('vote',vote);
       let projectId = vote.project.id;
+      console.log('pid', projectId);
       this.projects[projectId].done = true;
     });
+  }
+
+  findNextProject = async () =>  {
+    this.projects = await api.updateQueueStatus(this.projects);
 
     let queue = await api.getVoteQueue();
     if (!queue || queue.length === 0) {
@@ -74,13 +75,15 @@ class Voting extends React.Component {
       return (item === currProjectId);
     });
     
+    console.log('projects', this.projects);
+
     const nextProjectId = queue.slice(posInQ+1).find((itemId) => {
       console.log(itemId);
       let project = this.projects[itemId];
       return (!project.done);
     });
 
-    //todo: no more?
+    //todo: no more projects
 
     return nextProjectId;
   }

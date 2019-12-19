@@ -3,5 +3,13 @@
 }
 
 .voting-column.right-panel {
-  max-height: calc(100vh - 3.25rem);
+  max-height: calc(100vh);
+}
+
+@media screen and (max-width: 768px) {
+
+}
+
+.vote-scores {
+  overflow-y: scroll;
 }

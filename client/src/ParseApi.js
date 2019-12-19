@@ -1,6 +1,6 @@
 import Parse from 'parse';
 
-export default class {
+export default class ParseApi {
   static getAllProjects() {
     return Parse.Cloud.run('getAllProjects');
   }
@@ -33,5 +33,15 @@ export default class {
         }
       })
     return Parse.Cloud.run('saveVotes', {scores: toSync, cast, projectObjId, time});
+  }
+
+  static async updateQueueStatus(projects) {
+    const votes = await ParseApi.getVotes();
+    votes.forEach((vote) => {
+      let projectId = vote.project.id;
+      projects[projectId].done = true;
+    });
+
+    return projects;
   }
 }

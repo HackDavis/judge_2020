@@ -20,7 +20,7 @@ const IncrementalInput = function ({
       </div>
       <div className="increment-input">
         <a href className="increment-input-button is-grey" onClick={() =>  incremental(-1)}>
-          -
+          &#65293;
         </a>
         <input
           type="text" 
@@ -30,7 +30,7 @@ const IncrementalInput = function ({
           value={ score }
         />
         <a href className="increment-input-button is-primary" onClick={() => incremental(1)}>
-          +
+          &#65291;
         </a>
       </div>
     </div>

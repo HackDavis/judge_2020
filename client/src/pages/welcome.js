@@ -10,7 +10,7 @@ export default class WelcomePage extends React.Component {
     }
   }
 
-  // Maybe implement a Welcome page before sending to login/judge
+  // TODO: Maybe implement a Welcome page before sending to login/judge
   render() {
     if (this.state.loggedIn) {
       return (

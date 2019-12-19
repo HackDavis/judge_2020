@@ -24,6 +24,6 @@ export default function ProjectsViewer({projects, handleButtons}) {
             </div>
           )
         })}
-         </div>
+      </div>
   )
 }

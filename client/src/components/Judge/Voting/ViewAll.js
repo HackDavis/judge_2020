@@ -8,7 +8,10 @@ export default function ViewAll({handleButtons}) {
 
   useEffect(() => {
     api.getAllProjects().then((projects => {
-      setProjects(projects);
+      api.updateQueueStatus(projects)
+        .then((updatedProjects) => {
+          setProjects(updatedProjects);
+        })
     }));
   }, [])
   

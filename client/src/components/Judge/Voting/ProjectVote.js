@@ -29,7 +29,16 @@ export default class ProjectVote extends React.Component {
     });
   }
 
+  componentDidUpdate(prevProps) {
+    if (this.props.currProject !== prevProps.currProject) {
+      this.setState({
+        scores: this.initScores(),
+      });
+    }
+  }
+
   initScores() {
+    console.log('init scores');
     this.loadOldVotes();
     const scores = {};
     this.props.currProject.categories.forEach(category => {
@@ -60,8 +69,21 @@ export default class ProjectVote extends React.Component {
   }
 
   loadOldVotes = () =>  {
-    api.getVotes(this.props.currProject.objectId).then(console.log);
-    // TODO: load old votes
+    api.getVotes(this.props.currProject.objectId)
+      .then((resp)=>{
+        if (resp.votesCasted) {
+          console.log('votesCasted', resp.votesCasted);
+          let loadedScores = resp.votesCasted.votes.reduce((aggr, vote) => {
+            let category = vote.category;
+            aggr[category] = vote.score;
+            return aggr;
+          }, {});
+
+          this.setState({scores: loadedScores});
+        } else if (resp.votesWip) {
+          console.log('votesWip', resp.votesWip);
+        }
+      });
   }
 
   handleScoreChange = (value, category) => {
@@ -167,7 +189,7 @@ export default class ProjectVote extends React.Component {
   
             <div className="column voting-column right-panel">
   
-              <div className={"container "+(this.state.showingDescription ? "is-hidden-mobile" : "")}>
+              <div className={"container vote-scores "+(this.state.showingDescription ? "is-hidden-mobile" : "")}>
                 <VoteScores
                   categories={this.props.currProject.categories}
                   scores={this.state.scores}

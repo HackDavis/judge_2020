@@ -22,12 +22,9 @@ async function isAdmin(request) {
   let adminRoleQuery = new Parse.Query('_Role');
   adminRoleQuery.equalTo('name', 'Admin');
   adminRoleQuery.equalTo('users', request.user);
-  return adminRoleQuery.first(useMasterKey)
-    .then(match => {
-      return !!match;
-    }).catch(err => {
-      throw err;
-    });
+  const result =  await adminRoleQuery.first(useMasterKey);
+  
+  return !!result;
 }
 
 /*
@@ -35,17 +32,16 @@ async function isAdmin(request) {
  */ 
 
 async function loadCsv(request) {
-  return isAdmin(request)
-    .then(authorized => {
-      if (!authorized || !request.params.csv) {
-        throw new Error('Not admin');
-      }
-      return decodeURIComponent(request.params.csv);
-    })
-    .then(csv => {
-      return parseCsv(csv)
-    })
-    .catch(err => console.log('Error', err));
+  if (!await isAdmin(request)) {
+    throw new Error('Not admin');
+  }
+
+  if (!request.params.csv) {
+    throw new Error('No CSV file included')
+  }
+
+  const csv = decodeURIComponent(request.params.csv);
+  return parseCsv(csv);
 }
 
 async function parseCsv(csv) {
@@ -56,22 +52,23 @@ async function parseCsv(csv) {
     }
 
     csvParse(csv, csvParseOptions,
-      (err, output) => {
+      async (err, parsedOutput) => {
+
         if (err) {
           reject('CSV Error:', err.message);
           return;
         }
   
         let projects = [];
-        output.forEach(_project => {
+        parsedOutput.forEach(_project => {
           console.log(_project);
-          _project.categories = _project.categories.split(',');
+          _project.categories = _project.categories.split(','); // TODO: trim whitespace
           let project = new Project();
           project.set(_project);
           projects.push(project);
         });
 
-
+        await deleteOldProjects();
   
         Parse.Object.saveAll(projects, useMasterKey)
           .then(() => resolve('Uploaded.'))
@@ -82,6 +79,28 @@ async function parseCsv(csv) {
       }
     );
   });
+}
+
+async function deleteOldProjects() {
+  let toDelete = [];
+
+  const projectsQuery = new Parse.Query(Project);
+  projectsQuery.limit(1000);
+  toDelete = toDelete.concat(await projectsQuery.find(useMasterKey));
+
+  const voteQuery = new Parse.Query(Vote);
+  voteQuery.limit(1000);
+  toDelete = toDelete.concat(await voteQuery.find(useMasterKey));
+
+  const queueQuery = new Parse.Query(Queue);
+  queueQuery.limit(1000);
+  toDelete = toDelete.concat(await queueQuery.find(useMasterKey));
+
+  let deletePromises = toDelete.map((obj) => {
+    return obj.destroy()
+  })
+  
+  return Promise.all(deletePromises);
 }
 
 /*
