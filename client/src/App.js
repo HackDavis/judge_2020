@@ -11,7 +11,7 @@ export default function(props) {
     
         <Router>
           <Route path="/" exact render={() => (<WelcomePage {...props}/>)} />
-          <Route path="/login" render={props => (<LoginPage {...props}/>)} />
+          <Route path="/login" render={() => (<LoginPage {...props}/>)} />
           <Route path="/judge" render={() => (<JudgePage {...props}/>)} />
           <Route path="/admin" render={() => (<AdminPage {...props}/>)} />
         </Router>
