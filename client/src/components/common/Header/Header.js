@@ -6,14 +6,14 @@ export default function Navbar(props) {
 
   return (
     <React.Fragment>
-      <section className="navbar has-background-dark">
+      <section className="navbar is-white has-shadow">
         <div className="navbar-brand">
           <div className="navbar-item">
             <h1 className="title">
               <img src={logo} alt="HackDavis" />
             </h1>
           </div>
-          <a href role="button" className="navbar-burger burger has-text-light" aria-label="menu" aria-expanded="false" data-target="nav-drop" onClick={() => setExpandNav(!expandNav)}>
+          <a href role="button" className="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="nav-drop" onClick={() => setExpandNav(!expandNav)}>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>

@@ -36,12 +36,55 @@ export default class ParseApi {
   }
 
   static async updateQueueStatus(projects) {
+    let doneCount = 0;
     const votes = await ParseApi.getVotes();
     votes.forEach((vote) => {
+      if (!vote.casted) {
+        return;
+      }
+
       let projectId = vote.project.id;
+      doneCount++;
       projects[projectId].done = true;
     });
 
-    return projects;
+    return { projects, count: doneCount };
+  }
+
+  static async getGeneralCriteria() {
+    return Parse.Cloud.run('getGeneralCriteria');
+  }
+
+  static async addGeneralCriteria(name, accessor, description, order, maxScore) {
+    return Parse.Cloud.run('addGeneralCriteria', {name, accessor, description, order, maxScore});
+  }
+
+  static async deleteCriteria(objectId) {
+    return Parse.Cloud.run('deleteCriteria', {objectId});
+  }
+
+  static async updateCriteria(objectId, update) {
+    return Parse.Cloud.run('updateCriteria', {objectId, update});
+  }
+
+  static async getAllUsers() {
+    return Parse.Cloud.run('getAllUsers');
+  }
+
+  static async getAllCategories() {
+    return Parse.Cloud.run('getAllCategories');
+  }
+
+  static async getCategoriesOfJudge(judgeId) {
+    // if judgeId undefined then gets categories of current user/judge
+    return Parse.Cloud.run('getCategoriesOfJudge', {judgeId}); // todo: implement
+  }
+
+  static async getCategory(categoryId) {
+    return Parse.Cloud.run('getCategory', { categoryId }); // todo: implement
+  }
+
+  static async getCategoryCriteria(categoryId) {
+    return Parse.Cloud.run('getCategoryCriteria', { categoryId }); // todo: implement
   }
 }

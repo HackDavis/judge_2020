@@ -11,5 +11,5 @@
 }
 
 .vote-scores {
-  overflow-y: scroll;
+  overflow-y: auto;
 }

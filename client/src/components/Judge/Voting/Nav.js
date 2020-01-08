@@ -2,31 +2,32 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 
-function Nav ({handleButtons, hideSkip}) {
+function Nav ({handleButtons, hasNext}) {
   return (
     <div className="container short-container no-padding-bottom">
       <div className="columns is-mobile">
-        <div className={'column '+ (hideSkip ? '' : 'is-half')}>
+        <div className="column is-half">
           <a href
             className="button is-fullwidth is-primary is-outlined"
             onClick={() => handleButtons('view-all')}
-          >{hideSkip ? 'Back to project' : 'View all projects'}</a>
+          >View all projects</a>
+          {/* todo: toggle text of this button ^ */}
         </div>
-        {!hideSkip ? (
           <div className="column is-half">
-            <a href className="button is-fullwidth is-primary" onClick={() => handleButtons('next')}>Skip for now</a>
+            { hasNext ? (
+              <a href className="button is-fullwidth is-primary" onClick={() => handleButtons('next')}>Skip for now</a>
+            ) : (
+              <a href className="button is-fullwidth" disabled>No pending projects</a>
+            )}
           </div>
-        ) : (
-          null
-        )}
       </div>
     </div>
   )
 }
 
 Nav.propTypes = {
-  handleNav: PropTypes.func,
-  hideSkip: PropTypes.bool,
+  handleButtons: PropTypes.func.isRequired,
+  hasNext: PropTypes.bool.isRequired,
 }
 
 export default withRouter(Nav);

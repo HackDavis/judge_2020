@@ -1,22 +1,27 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import propTypes from 'prop-types'
 import './IncrementalInput.css'
 
 const IncrementalInput = function ({
-  category,
+  criterion,
   score,
   handleVoteControls,
   hasNext,
 }) {
-  const incremental = delta => handleVoteControls('incremental', {category, delta});
-  const handleScoreChange = event => handleVoteControls('scoreChange', {category, value: event.target.value});
-  const handleBlur = () => handleVoteControls('focus', {category});
-  const handleFocus = () => handleVoteControls('blur', {category});
+  useEffect(() => {
+    console.log('updated', score)
+  }, [score])
+
+  const incremental = delta => handleVoteControls('incremental', {criterion, delta});
+  const handleScoreChange = event => handleVoteControls('scoreChange', {criterion, value: event.target.value});
+  const handleBlur = () => handleVoteControls('blur', {criterion});
+  const handleFocus = () => handleVoteControls('focus', {criterion});
 
   return (
     <div className={"vote-row" + (hasNext ? ' vote-row-border' : '')}>
       <div className="vote-row-title">
-        {category}
+        <div className="criteria-name">{criterion.name}</div>
+        <div className="max-points">{criterion.maxScore} points max</div>
       </div>
       <div className="increment-input">
         <a href className="increment-input-button is-grey" onClick={() =>  incremental(-1)}>
@@ -38,7 +43,7 @@ const IncrementalInput = function ({
 }
 
 IncrementalInput.propTypes = {
-  category: propTypes.string.isRequired,
+  criterion: propTypes.object.isRequired,
   score: propTypes.number.isRequired,
   handleVoteControls: propTypes.func.isRequired,
   hasNext: propTypes.bool,

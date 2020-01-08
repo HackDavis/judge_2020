@@ -1,8 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Redirect } from 'react-router-dom';
 import Parse from 'parse';
 import api from '../../../ParseApi';
-import ProjectVote from './ProjectVote';
+import DisplayProject from './DisplayProject';
 import ViewAll from './ViewAll';
 
 class Voting extends React.Component {
@@ -13,53 +14,65 @@ class Voting extends React.Component {
     
   projects = {};
   state = {
-    currProjectId: -1,
-    loadedProjects: false,
+    currProjectId: undefined,
+    isProjectsLoaded: false,
     viewAll: false,
+    projectsLeftCount: undefined,
+    sendToCompletionPage: false,
   };
   
   componentDidMount() {
+    // TODO: check if voting open
     this.getProjects()
       .then(() => this.findNextProject())
-      .then((currProjectId) => {
-        this.setState({currProjectId})
+      .then((nextProjectId) => {
+        this.setState({
+          currProjectId: nextProjectId,
+        })
+
       });
   }
     
   getProjects = () => {
     let ret = api.getAllProjects()
-      .then((projects) => {
+      .then(async (projects) => {
         this.projects = projects;
-        this.setState({loadedProjects: true});
+        await this.updateQueueStatus();
+
+        this.setState({
+          isProjectsLoaded: true,
+        });
+
       });
     return ret;
   }
 
   gotoNextProject = async () => {
-    // TOOD: SKIP BUG. Can't edit scores of next project
     const nextProjectId = await this.findNextProject();
-    if (!nextProjectId) return;
+    if (nextProjectId === this.state.currProjectId) {
+      if (this.state.projectsLeftCount === 0) {
+        this.setState({ sendToCompletionPage: true });
+      } else {
+        // todo: prompt that no other projects need voting on
+      }
+
+      return;
+    }
 
     this.setState({
       currProjectId: nextProjectId,
     });
-
-    console.log(nextProjectId);
-    console.log(this.projects[nextProjectId]);
   }
 
   updateQueueStatus = async () => {
-    const votes = await api.getVotes();
-    votes.forEach((vote) => {
-      console.log('vote',vote);
-      let projectId = vote.project.id;
-      console.log('pid', projectId);
-      this.projects[projectId].done = true;
-    });
+    const updateResults = await api.updateQueueStatus(this.projects);
+    this.projects = updateResults.projects;
+    let projectsLeftCount = Object.keys(this.projects).length - updateResults.count;
+    this.setState({ projectsLeftCount });
   }
 
   findNextProject = async () =>  {
-    this.projects = await api.updateQueueStatus(this.projects);
+    await this.updateQueueStatus();
 
     let queue = await api.getVoteQueue();
     if (!queue || queue.length === 0) {
@@ -69,23 +82,39 @@ class Voting extends React.Component {
       console.log(queue);
     }
 
-    console.log(this.projects);
     const currProjectId = this.state.currProjectId;
     let posInQ = queue.findIndex((item) => {
       return (item === currProjectId);
     });
-    
-    console.log('projects', this.projects);
 
-    const nextProjectId = queue.slice(posInQ+1).find((itemId) => {
+    // Check for incomplete projects after current
+    let sliceAfterCurr = queue.slice(posInQ+1);
+    let nextProjectId = sliceAfterCurr.find((itemId) => {
       console.log(itemId);
       let project = this.projects[itemId];
       return (!project.done);
     });
 
-    //todo: no more projects
+    if (nextProjectId !== undefined) {
+      return nextProjectId;
+    }
 
-    return nextProjectId;
+    // Check for incomplete projects before current
+    let sliceBeforeCurr = queue.slice(0, posInQ);
+
+    nextProjectId = sliceBeforeCurr.find((itemId) => {
+      console.log(itemId);
+      let project = this.projects[itemId];
+      return (!project.done);
+    });
+
+    if (nextProjectId !== undefined) {
+      return nextProjectId;
+    }
+
+    // Try to return currProjectId if no more projects to score,
+    // otherwise return first project
+    return currProjectId || queue[0];
   }
     
   handleButtons = (val, props) =>  {
@@ -128,7 +157,11 @@ class Voting extends React.Component {
   }
   
   render() {
-    if (!this.state.loadedProjects || this.state.currProjectId === -1) {
+    if (this.state.sendToCompletionPage) {
+      return <Redirect to="/judge/complete"/>;
+    }
+
+    if (!this.state.isProjectsLoaded || this.state.currProjectId === undefined) {
       return (
         <section className="section">
           <h1>Please wait...</h1>
@@ -137,13 +170,20 @@ class Voting extends React.Component {
     }
 
     if (this.state.viewAll) {
-       return <ViewAll projects={this.projects} handleButtons={this.handleButtons}/>
+      return (
+        <ViewAll
+          currProjectId={this.state.currProjectId}
+          projects={this.projects}
+          handleButtons={this.handleButtons}
+        />
+      )
     }
 
     return (
-      <ProjectVote
+      <DisplayProject
         currProject={this.projects[this.state.currProjectId]}
         handleButtons={this.handleButtons}
+        projectsLeftCount={this.state.projectsLeftCount}
       />
     )
   }

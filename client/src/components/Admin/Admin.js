@@ -1,22 +1,70 @@
 import React from 'react'
 
-import FileUpload from './FileUpload'
+import Projects from './Projects'
+import Criteria from './Criteria'
+import Judges from './Judges'
+
+const TabNav = function({tabs, selected, handleTabClick}) {
+  return (
+    <ul>
+      { tabs.map(({name, accessor}) => {
+        return (
+          <li key={accessor} className={(selected === accessor) ? "is-active" : undefined}>
+            <a href onClick={() => handleTabClick(accessor)}>
+              {name}
+            </a>
+          </li>
+        )
+      }) }
+    </ul>
+  )
+}
+
+const TabContents = function({selected}) {
+  switch (selected) {
+    case 'projects': {
+      return <Projects/>
+    }
+    case 'categories': {
+      return 'Categories'
+    }
+    case 'criteria': {
+      return <Criteria/>
+    }
+    case 'judges': {
+      return <Judges/>
+    }
+    default: {
+      return 'Nothing here'
+    }
+  }
+}
 
 class AdminPage extends React.Component {
   state = {
-    activeTab: 'projects', 
-    // actualName: 'Display Name;
-    projectVisibleCols: {
-      name: 'Name',
-      table: 'Table'
-    },
-    categoryVisibleCols: {
-      id: 'ID',
-      name: 'Name'
-    }
+    activeTab: 'projects',
   }
 
-  handleTabClick(tab) {
+  tabs = [
+    {
+      name: 'Projects',
+      accessor: 'projects',
+    },
+    {
+      name: 'Judges',
+      accessor: 'judges',
+    },
+    {
+      name: 'Categories',
+      accessor: 'categories',
+    },
+    {
+      name: 'Judging Criteria',
+      accessor: 'criteria',
+    }
+  ]
+
+  handleTabClick = (tab) => {
     this.setState({activeTab: tab});
   }
 
@@ -24,39 +72,21 @@ class AdminPage extends React.Component {
     return (
       <React.Fragment>
         <div className="tabs is-centered">
-          <ul>
-            <li className={(this.state.activeTab === 'projects') ? "is-active" : undefined}>
-              <a href onClick={() => this.handleTabClick('projects')}>
-                Projects
-              </a>
-            </li>
-            <li className={(this.state.activeTab === 'categories') ? "is-active" : undefined}>
-            <a href onClick={() => this.handleTabClick('categories')}>
-              Categories
-            </a>
-            </li>
-          </ul>
+
+          <TabNav 
+            tabs={ this.tabs }
+            selected={ this.state.activeTab }
+            handleTabClick={ this.handleTabClick }
+          ></TabNav>
+
         </div>
-        
-        <section className="section">
-          {/* { this.state.activeTab == 'projects'
-              ? <DataViewer
-                  displayName="Projects"
-                  parseClassName="Project"
-                  visibleColNames={this.state.projectVisibleCols}
-                />
-              : <DataViewer
-                  displayName="Categories"
-                  parseClassName="Category"
-                  visibleColNames={this.state.categoryVisibleCols}
-                />
-          } */}
+
+        <section className="section is-small">
+
+          <TabContents selected={ this.state.activeTab }></TabContents>
+          
         </section>
 
-        <section className="section is-medium">
-          {/* <ProjectsAdd/> */}
-          <FileUpload/>
-        </section>
       </React.Fragment>
     );
   }

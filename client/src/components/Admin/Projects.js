@@ -1,7 +1,7 @@
 import React from 'react';
 import Parse from 'parse';
 
-export default class FileUpload extends React.Component {
+export default class Projects extends React.Component {
   constructor(props) {
     super(props);
     this.state = {

@@ -1,14 +1,19 @@
 import React from 'react';
-import './ProjectsViewer.css'
+import './ProjectsList.css'
 
-export default function ProjectsViewer({projects, handleButtons}) {
+export default function ProjectsList({currProjectId, projects, handleButtons}) {
   return (
        <div className="container">
         {Object.values(projects).map(project => {
           return (
             <div className="project-row" key={project.objectId}>
               <span className="project-name">
-                <a href onClick={() => handleButtons('jump', project.objectId)}>{project.name}</a>
+                
+                  { currProjectId === project.objectId? (
+                    <a href onClick={() => handleButtons('jump', project.objectId)}><b>{project.name} (Current)</b></a>
+                  ) : (
+                    <a href onClick={() => handleButtons('jump', project.objectId)}>{project.name}</a>
+                  )}
               </span>
               
                 {project.skipped ? (

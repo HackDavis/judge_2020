@@ -3,21 +3,21 @@ import React from 'react';
 import propTypes from 'prop-types';
 import IncrementalInput from './IncrementalInput';
 
-const ProjectScores = function({categories, scores, handleVoteControls}) { 
+const ProjectScores = function({criteria, scores, handleVoteControls}) { 
   if (!scores) {
     return null;
   }
 
   return (
     <div className="container" style={{ paddingTop: '3vh', paddingBottom: '3vh', textAlign: 'center'}}>
-      { categories.map((category, index) => {
+      { criteria.map((criterion, index) => {
         return (
           <IncrementalInput
-            key={category}
-            category={category}
-            score={scores[category] || 5}
+            key={criterion.accessor}
+            criterion={criterion}
+            score={scores[criterion.accessor]}
             handleVoteControls={handleVoteControls}
-            hasNext={ !(index === (categories.length - 1))}
+            hasNext={ !(index === (criteria.length - 1))}
           />
         )
       })}
@@ -26,7 +26,7 @@ const ProjectScores = function({categories, scores, handleVoteControls}) {
 }
 
 ProjectScores.propTypes = {
-  categories: propTypes.array.isRequired,
+  criteria: propTypes.array.isRequired,
   scores: propTypes.object.isRequired,
   handleVoteControls: propTypes.func.isRequired,
 }
