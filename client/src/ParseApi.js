@@ -22,7 +22,7 @@ export default class ParseApi {
     return Parse.Cloud.run('createVoteQueue');
   }
 
-  static syncVotes(projectId, scores, cast) {
+  static syncVotes(projectId, categoryId, scores, cast) {
     const time = Date.now();
     const projectObjId = projectId;
     const toSync = Object.keys(scores)
@@ -32,7 +32,7 @@ export default class ParseApi {
           score: scores[category],
         }
       })
-    return Parse.Cloud.run('saveVotes', {scores: toSync, cast, projectObjId, time});
+    return Parse.Cloud.run('saveVotes', {scores: toSync, cast, projectObjId, categoryId, time});
   }
 
   static async updateQueueStatus(projects) {
@@ -71,13 +71,35 @@ export default class ParseApi {
     return Parse.Cloud.run('getAllUsers');
   }
 
+  /**
+   * @param {string} userId objectId of user to update
+   * @param {Object<string, string>} update Data to update. 
+   *    Example keys: 'username', 'display_name', 'password', 'email'
+   */
+  static async updateUser(userId, updateData) {
+    return Parse.Cloud.run('updateUser', {userId, updateData}); // todo: implement
+  }
+
   static async getAllCategories() {
     return Parse.Cloud.run('getAllCategories');
   }
 
+  /**
+   * Get the categories that a judge is selected to vote in
+   * @param {string} judgeId objectId of judge. 
+   *    If left undefined, it will get the categories of the current user
+   */
   static async getCategoriesOfJudge(judgeId) {
-    // if judgeId undefined then gets categories of current user/judge
-    return Parse.Cloud.run('getCategoriesOfJudge', {judgeId}); // todo: implement
+    return Parse.Cloud.run('getCategoriesOfJudge', {judgeId});
+  }
+
+  /**
+   * Set and overwrite categories that judge will be voting in
+   * @param {string} userId objectId of user to update
+   * @param {Array<string>} categories Array of category objectIds strings
+   */
+  static async setCategoriesOfJudge(judgeId, categories) {
+    return Parse.Cloud.run('setCategoriesOfJudge', {judgeId, categories}); // todo: implement
   }
 
   static async getCategory(categoryId) {

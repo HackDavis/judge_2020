@@ -5,7 +5,7 @@ import api from '../../ParseApi'
 
 const CategoriesField = function(props) {
   return (
-    <label class="checkbox">
+    <label className="checkbox">
       <input type="checkbox"/>
     </label>
   )
@@ -26,35 +26,89 @@ export default class Judges extends React.Component {
             reject(errMsg);
           });
       }),
-    // onRowUpdate: (newData, oldData) =>
-    //   new Promise((resolve, reject) => {
-    //     reject();
-    //   }),
+    onRowUpdate: (newData, oldData) =>
+    new Promise((resolve, reject) => {
+      let update = {
+        username: newData.username,
+        email: newData.email,
+        display_name: newData.display_name,
+      }
+
+      if (newData.password !== "") {
+        update.password = newData.password;
+      }
+
+      let categories = [];
+      this.categoryIds.forEach((categoryId) => {
+        let key = this.getCategoryKey(categoryId);
+        if (newData[key]) {
+          categories.push(categoryId);
+        }
+      });
+
+      return api.setCategoriesOfJudge(newData.objectId, categories);
+
+      // api.updateUser(newData.objectId, update)
+      //   .then(() => {
+      //     return api.setCategoriesOfJudge(newData.objectId, categories);
+      //   }).then(() => resolve())
+      //   .catch((err) => {
+      //     let errMsg = `Error: Failed to update criterion. ${err}`;
+      //     alert(errMsg)
+      //     reject(errMsg);
+      //   });
+    }),
     onRowDelete: oldData => api.deleteCriteria(oldData.objectId),
   }
 
   tableColumns = [
     { title: 'Username', field: 'username' },
-    // { title: 'Password', field: 'password' },
+    { title: 'Password', field: 'password' },
     { title: 'Email', field: 'email' },
     { title: 'Display Name', field: 'display_name' },
   ]
+
+  categoryIds = [];
 
   state = {
     isReady: false,
   }
 
   componentDidMount() {
+    this.initCategories();
+  }
+
+  /**
+   * Generates a key for the MaterialTable column key for a category
+   * @param {string} categoryId The objectId of the category object
+   */
+  getCategoryKey(categoryId) {
+    return `cat_${categoryId}`;
+  }
+
+  parseCategoryIdFromKey(columnKey) {
+    if (!columnKey.startsWith('cat_')) {
+      throw new Error("Invalid key. Doesn't start with 'cat_'");
+    }
+
+    return columnKey.slice(4);
+  }
+
+  /**
+   * Fetches all possible categories and creates new columns for each.
+   */
+  initCategories() {
     api.getAllCategories()
       .then((categories) => {
         
         categories.forEach((category) => {
           let id = category.id;
+          this.categoryIds.push(category.id);
           let name = category.get('name');
           this.tableColumns.push({
             title: name,
-            field: `cat[${id}]`,
-            render: rowData => <CategoriesField/>
+            field: this.getCategoryKey(id),
+            type: 'boolean',
           })
         });
 
@@ -70,6 +124,7 @@ export default class Judges extends React.Component {
     return (
       <MaterialTable
         title='Judging Criteria'
+        columns={this.tableColumns}
         data={query =>
           new Promise((resolve, reject) => {
             api.getAllUsers()
@@ -78,27 +133,31 @@ export default class Judges extends React.Component {
                 let mapUser = async (item) => {
                   let userData = {
                     username: item.username,
-                    // password: item.password,
+                    password: '',
                     email: item.email,
                     display_name: item.display_name,
-                    objectId: item.id
+                    objectId: item.objectId
                   }
 
-                  let categories = await api.getCategoriesOfJudge(item.id);
-                  // todo: add category selects into table
+                  let categories = await api.getCategoriesOfJudge(item.objectId);
+                  if(categories) {
+                    categories.forEach((categoryId) => {
+                      let key = this.getCategoryKey(categoryId);
+                      userData[key] = true;
+                    })
+                  }
 
                   return userData;
                 };
 
                 return Promise.all(users.map(mapUser));
                 
-              })
-              .then((users) => {
-
+              }).then((users) => {
+                console.log(users);
+                return resolve({data: users});
               })
           })
         }
-        columns={this.tableColumns}
         options={{
           paging: false,
           sorting: false,
