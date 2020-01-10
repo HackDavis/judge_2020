@@ -22,13 +22,26 @@ export default function ViewAll({ currProjectId, handleButtons }) {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    api.getAllProjects().then((projects => {
-      api.updateQueueStatus(projects)
-        .then((updateResults) => {
-          setProjects(updateResults.projects);
-        })
-    }));
-  }, [])
+    let queue = [];
+    let viewableProjects;
+    api.getAllProjects()
+      .then( (projects) => {        
+        return api.updateQueueStatus(projects);
+      }).then( ({projects}) => {
+        console.log(projects);
+        viewableProjects = projects;
+        return api.getVoteQueue();
+      }).then( (queue) => {
+        viewableProjects = Object.values(viewableProjects).reduce((aggr, project) => {
+          if (queue.includes(project.objectId)) {
+            aggr.push(project);
+          }
+          return aggr;
+        }, [])
+        
+        setProjects(viewableProjects);
+      })
+  }, [projects]);
   
   return (
     <section className="section voting-container">

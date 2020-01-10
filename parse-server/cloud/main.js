@@ -365,7 +365,7 @@ async function saveVotesHandler(request) {
     }).then(() => {
       return 'Saved';
     }).catch(err => {
-      console.log('ProjectGet Error:', err);
+      console.log('Save votes error:', err);
       return 'Error';
     });
 }
