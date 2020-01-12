@@ -1,5 +1,6 @@
 import React from 'react';
 import Parse from 'parse';
+import api from 'ParseApi'
 import { Redirect } from 'react-router-dom';
 
 import Header from '../common/Header';
@@ -17,17 +18,17 @@ export default function UserHoc (WrappedComponent, checkAdmin = false) {
       }
 
       if (checkAdmin === true) {
-        Parse.Cloud.run('isAdmin')
-        .then(isAdmin => {
-          if (isAdmin === false) {
-            this.setState({ redirectTo: '/judge' });
-            return;
-          }
-        })
+        api.isAdmin()
+          .then(isAdmin => {
+            if (isAdmin === false) {
+              this.setState({ redirectTo: '/judge' });
+              return;
+            }
+          })
       }
     }
 
-    getCurrentUser() {
+    getCurrentUser = () => {
       const currentUser = Parse.User.current();
       if (currentUser) {
         return currentUser;

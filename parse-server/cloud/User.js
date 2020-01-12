@@ -3,7 +3,7 @@ const {useMasterKey} = require('./common');
 module.exports = class User {
 
   static async onIsAdmin(request) {
-    return isAdmin(request.user);
+    return User.isAdmin(request.user);
   }
 
   static async isAdmin(user) {
