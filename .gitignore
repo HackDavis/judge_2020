@@ -7,3 +7,4 @@
 *.csv
 */build
 */.vscode
+launch.json
