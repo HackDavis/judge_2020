@@ -5,12 +5,20 @@ export default class ParseApi {
     return Parse.Cloud.run('getAllProjects');
   }
 
+  static getProjects(projectIds) {
+    return Parse.Cloud.run('getProjects', {projectIds});
+  }
+
   static getProject(projectId) {
     return Parse.Cloud.run('getProject', {projectId});
   }
 
-  static getVotes(projectId) {
-    return Parse.Cloud.run('getVotes', {projectId});
+  static getVotes(projectId, categoryId) {
+    return Parse.Cloud.run('getVotes', { projectId, categoryId });
+  }
+
+  static hasVoteCasted(projectId, categoryId, judgeId) {
+    return Parse.Cloud.run('getVotes', { projectId, categoryId, judgeId });
   }
 
   static getVoteQueue() {
@@ -22,7 +30,12 @@ export default class ParseApi {
     return Parse.Cloud.run('createVoteQueue');
   }
 
-  static syncVotes(projectId, categoryId, scores, cast) {
+  static getCompletionStatus(allProjects, projects, judgeId) {
+    return Parse.Cloud.run('getCompletionStatus', { allProjects, projects, judgeId });
+  }
+
+  static castVotes(projectId, categoryId, scores, isJudgesPick) {
+    console.log(isJudgesPick)
     const time = Date.now();
     const projectObjId = projectId;
     const toSync = Object.keys(scores)
@@ -32,21 +45,19 @@ export default class ParseApi {
           score: scores[category],
         }
       })
-    return Parse.Cloud.run('saveVotes', {scores: toSync, cast, projectObjId, categoryId, time});
+    return Parse.Cloud.run('saveVotes', {scores: toSync, isJudgesPick, projectObjId, categoryId, time});
   }
 
-  static async updateQueueStatus(projects) {
+  static async updateCompletionStatus(projects) {
     let doneCount = 0;
-    const votes = await ParseApi.getVotes();
-    votes.forEach((vote) => {
-      if (!vote.casted) {
-        return;
-      }
+    const votes = await ParseApi.getCompletionStatus(true);
 
-      let projectId = vote.project.id;
-      doneCount++;
-      projects[projectId].done = true;
-    });
+    for (let [id, isComplete] of Object.entries(votes.projectCompletions)) {
+      projects[id].done = isComplete;
+      if (isComplete) {
+        doneCount++;
+      }
+    }
 
     return { projects, count: doneCount };
   }

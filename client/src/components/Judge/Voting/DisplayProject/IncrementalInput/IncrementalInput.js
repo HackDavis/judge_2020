@@ -1,51 +1,59 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import propTypes from 'prop-types'
+import RubricRow from '../RubricRow'
 import './IncrementalInput.css'
 
 const IncrementalInput = function ({
   criterion,
-  score,
-  handleVoteControls,
+  scoreIn,
+  onInputEvent,
   hasNext,
 }) {
-  useEffect(() => {
-    console.log('updated', score)
-  }, [score])
+  const [score, setScore] = useState(scoreIn);
+  const incremental = delta => onInputEvent('incremental', {criterion, delta});
+  const handleScoreChange = event => onInputEvent('scoreChange', {criterion, value: event.target.value});
+  const handleBlur = () => onInputEvent('blur', {criterion});
+  const handleFocus = () => onInputEvent('focus', {criterion});
 
-  const incremental = delta => handleVoteControls('incremental', {criterion, delta});
-  const handleScoreChange = event => handleVoteControls('scoreChange', {criterion, value: event.target.value});
-  const handleBlur = () => handleVoteControls('blur', {criterion});
-  const handleFocus = () => handleVoteControls('focus', {criterion});
+  useEffect(() => {
+    setScore(scoreIn);
+  }, [scoreIn])
 
   return (
-    <div className={"vote-row" + (hasNext ? ' vote-row-border' : '')}>
-      <div className="vote-row-title">
-        <div className="criteria-name">{criterion.name}</div>
-        <div className="max-points">{criterion.maxScore} points max</div>
-      </div>
-      <div className="increment-input">
-        <a href className="increment-input-button is-grey" onClick={() =>  incremental(-1)}>
-          &#65293;
-        </a>
-        <input
-          type="text" 
-          onChange={ handleScoreChange }
-          onFocus={ handleFocus }
-          onBlur = { handleBlur }
-          value={ score }
-        />
-        <a href className="increment-input-button is-primary" onClick={() => incremental(1)}>
-          &#65291;
-        </a>
-      </div>
-    </div>
-  );
+    <RubricRow
+      hasNext={hasNext}
+      TitleElement={
+        <React.Fragment>
+          <div className="rubric-item-name">{criterion.name}</div>
+          <div className="rubric-item-desc">{criterion.maxScore} points max</div>
+        </React.Fragment>
+      }
+      InputElement={
+        <React.Fragment>
+          <a href className="increment-input-button is-grey" onClick={() =>  incremental(-1)}>
+            &#65293;
+          </a>
+          <input
+            className="__incrementalinput"
+            type="text" 
+            onChange={ handleScoreChange }
+            onFocus={ handleFocus }
+            onBlur = { handleBlur }
+            value={ score }
+          />
+          <a href className="increment-input-button is-primary" onClick={() => incremental(1)}>
+            &#65291;
+          </a>
+        </React.Fragment>
+      }
+    />
+  )
 }
 
 IncrementalInput.propTypes = {
   criterion: propTypes.object.isRequired,
-  score: propTypes.number.isRequired,
-  handleVoteControls: propTypes.func.isRequired,
+  scoreIn: propTypes.number.isRequired,
+  onInputEvent: propTypes.func.isRequired,
   hasNext: propTypes.bool,
 }
 

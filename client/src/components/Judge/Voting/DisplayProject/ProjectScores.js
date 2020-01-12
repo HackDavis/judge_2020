@@ -2,6 +2,7 @@ import React from 'react';
 
 import propTypes from 'prop-types';
 import IncrementalInput from './IncrementalInput';
+import JudgesPick from './JudgesPick'
 import VotingControls from './VotingControls';
 
 import api from '../../../../ParseApi'
@@ -22,8 +23,7 @@ const CastVotesButton = function({castVotes}) {
 
 const ProjectScores = class extends React.Component {
   static propTypes = {
-    scores: propTypes.object.isRequired,
-    handleVoteControls: propTypes.func,
+    onScoreEvent: propTypes.func,
     categoryId: propTypes.string.isRequired,
     projectId: propTypes.string.isRequired,
   }
@@ -34,12 +34,18 @@ const ProjectScores = class extends React.Component {
 
   state = {
     scores: undefined,
+    isJudgesPick: false,
     criteriaLoaded: false,
   }
 
   componentDidMount() {
     this.getProjectCriteria()
       .then(() => {
+        return api.getCategory(this.props.categoryId);
+      }).then((category) => {
+        this.category = category;
+        console.log(category)
+      }).then(() => {
         this.initScores();
       });
   }
@@ -49,6 +55,10 @@ const ProjectScores = class extends React.Component {
       this.setState({showDescription: true});
       this.getProjectCriteria()
         .then(() => {
+          return api.getCategory(this.props.categoryId);
+        }).then((category) => {
+          this.category = category;
+        }).then(() => {
           this.initScores();
         });
     }
@@ -63,65 +73,61 @@ const ProjectScores = class extends React.Component {
   }
 
   initScores = async () => {
-    let oldVotes = await this.loadOldVotes();
+    let loadedOldVotes = await this.loadOldVotes();
+    if (loadedOldVotes) {
+      return;
+    }
 
-    let scores;
-    let hasOldScores;
+    let scores = {};
+    let hasOldScores = false;
 
-    if (oldVotes) {
-      console.log('oldvotes', oldVotes);
-      scores = oldVotes;
-      hasOldScores = true;
-    } else {
-      console.log('no old votes')
-  
-      scores = {};
-      this.votingCriteria.forEach(criterion => {
-        let defaultScore = Math.ceil(criterion.maxScore / 2);
-        scores[criterion.accessor] = defaultScore;
-      });
-
-      hasOldScores = false;
+    for (let criterion of this.votingCriteria) {
+      let defaultScore = Math.ceil(criterion.maxScore / 2);
+      scores[criterion.accessor] = defaultScore;
     }
 
     this.setState({ scores, hasOldScores });
   }
 
-  syncVotes = async (scores, cast) => {
-    console.log('cast');
-    return api.syncVotes(this.props.projectId, this.props.categoryId, scores, cast);
-  }
-
-  castVotes = async () =>  {
-    return this.syncVotes(this.state.scores, true)
-      .then(res => {
-        // this.setState(state => {
-        //   return {
-        //     showDescription: !state.showDescription
-        //   }
-        // });
-        // this.props.handleButtons('next');
-      }).catch((err) => {
-        alert(`Error: Failed to cast votes. Err: ${err}`);
-      })
-  }
-
   loadOldVotes = async () =>  {
-    return api.getVotes(this.props.projectId)
-      .then((resp)=>{
-        if (resp.votesCasted) {
-          console.log('votesCasted', resp.votesCasted);
-          let loadedScores = resp.votesCasted.votes.reduce((aggr, vote) => {
+    return api.getVotes(this.props.projectId, this.props.categoryId)
+      .then((oldVotes)=>{
+        if (oldVotes) {
+          let loadedScores = oldVotes.votes.reduce((aggr, vote) => {
             let category = vote.category;
             aggr[category] = vote.score;
             return aggr;
           }, {});
 
-          return loadedScores;
+          return {
+            scores: loadedScores,
+            isJudgesPick: oldVotes.isJudgesPick,
+          };
         }
 
         return null;
+      }).then( (loaded) => {
+        if (loaded === null) {
+          return false;
+        }
+        let scores = loaded.scores;
+        let isJudgesPick = loaded.isJudgesPick
+        let hasOldScores = true;
+        this.setState({ scores, isJudgesPick, hasOldScores }, () => {
+          console.log('loaded old scores')
+          this.props.onScoreEvent('loadedOldVotes', { categoryId: this.props.categoryId });
+        })
+        return true;
       });
+  }
+
+  castVotes = async () =>  {
+    return api.castVotes(this.props.projectId, this.props.categoryId, this.state.scores, this.state.isJudgesPick)
+      .then(() => {
+        this.props.onScoreEvent('castedVote', { categoryId: this.props.categoryId });
+      }).catch((err) => {
+        alert(`Error: Failed to cast votes. Err: ${err}`);
+      })
   }
 
   handleScoreChange = (value, criterion) => {
@@ -155,8 +161,6 @@ const ProjectScores = class extends React.Component {
       return {
         scores: newScores
       }
-    }, () => {
-      this.syncVotes(this.state.scores, false);
     })
   }
 
@@ -164,7 +168,7 @@ const ProjectScores = class extends React.Component {
   handleBlur = (criterion) => {
     const {accessor, maxScore} = criterion;
     var newScores;
-    this.setState(({scores}) => {
+    this.setState( ({scores}) => {
       newScores =  {...scores};
   
       if (scores[accessor] === '') {
@@ -180,21 +184,12 @@ const ProjectScores = class extends React.Component {
       return {
         scores: newScores
       }
-    }, () => {
-      this.syncVotes(this.state.scores, false);
     });
 
   }
 
-  handleVoteControls = (event, params) => {
+  onInputEvent = (event, params) => {
     switch (event) {
-      case 'toggleDesc':
-        // this.setState(state => {
-        //   return {
-        //     showDescription: !state.showDescription
-        //   }
-        // });
-        break;
       case 'scoreChange':
         this.handleScoreChange(params.value, params.criterion);
         break;
@@ -206,6 +201,9 @@ const ProjectScores = class extends React.Component {
         break;
       case 'blur':
         this.handleBlur(params.criterion);
+        break;
+      case 'changePick':
+        this.setState({ isJudgesPick: params.e.target.checked });
         break;
       default:
         break;
@@ -219,17 +217,26 @@ const ProjectScores = class extends React.Component {
   
     return (
       <div className="container" style={{ paddingTop: '3vh', paddingBottom: '3vh', textAlign: 'center'}}>
-        { this.votingCriteria.map((criterion, index) => {
-          return (
-            <IncrementalInput
-              key={criterion.accessor}
-              criterion={criterion}
-              score={this.state.scores[criterion.accessor]}
-              handleVoteControls={this.handleVoteControls}
-              hasNext={ !(index === (this.props.criteria.length - 1))}
-            />
-          )
-        })}
+        <h3 className="title is-4 is-marginless">{this.category.name}</h3>
+        <div className="section rubric">
+          { this.votingCriteria.map((criterion, index) => {
+            return (
+              <IncrementalInput
+                key={criterion.accessor}
+                criterion={criterion}
+                scoreIn={this.state.scores[criterion.accessor]}
+                onInputEvent={this.onInputEvent}
+                // hasNext={ !(index === (this.votingCriteria.length - 1))}
+                hasNext={true}
+              />
+            )
+          })}
+          <JudgesPick
+            isPicked={this.state.isJudgesPick}
+            onChange={(e) => this.onInputEvent('changePick', { e })}
+            hasNext={false}
+          />
+        </div>
   
         <CastVotesButton
           castVotes={() => this.castVotes()}
@@ -239,32 +246,5 @@ const ProjectScores = class extends React.Component {
     )
   }
 }
-
-// const ProjectScores = function({criteria, scores, handleVoteControls}) { 
-//   if (!scores) {
-//     return null;
-//   }
-
-//   return (
-//     <div className="container" style={{ paddingTop: '3vh', paddingBottom: '3vh', textAlign: 'center'}}>
-//       { criteria.map((criterion, index) => {
-//         return (
-//           <IncrementalInput
-//             key={criterion.accessor}
-//             criterion={criterion}
-//             score={scores[criterion.accessor]}
-//             handleVoteControls={handleVoteControls}
-//             hasNext={ !(index === (criteria.length - 1))}
-//           />
-//         )
-//       })}
-
-//       <VotingControls
-//         castVotes={() => this.castVotes()}
-//       />
-
-//     </div>
-//   )
-// }
 
 export default ProjectScores;

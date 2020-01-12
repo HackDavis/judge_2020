@@ -46,11 +46,13 @@ export default function UserHoc (WrappedComponent, checkAdmin = false) {
       return (
         <React.Fragment>
           <Header includeLogout={true}></Header>
-          <WrappedComponent
-            {...this.props}
-            getCurrentUser={this.getCurrentUser}
-            handleParseError={this.handleParseError}
-          />
+          <div className="main-container">
+            <WrappedComponent
+              {...this.props}
+              getCurrentUser={this.getCurrentUser}
+              handleParseError={this.handleParseError}
+            />
+          </div>
         </React.Fragment>
       )
     }

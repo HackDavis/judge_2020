@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node --inspect-brk=localhost:9229 index.js"
   },
   "author": "",
   "license": "ISC",

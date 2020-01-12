@@ -46,7 +46,9 @@ export default function UserHoc({render, checkAdmin = false}) {
       return (
         <React.Fragment>
           <Header includeLogout={true}></Header>
-          {this.props.render(this.getCurrentUser)}
+          <div className="main-container">
+            {this.props.render(this.getCurrentUser)}
+          </div>
         </React.Fragment>
       )
     }

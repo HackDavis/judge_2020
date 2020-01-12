@@ -18,48 +18,58 @@ export default class DisplayProject extends React.Component {
     projectsLeftCount: propTypes.number.isRequired,
   }
 
-  scoresBeforeFocus = {};
-  votingCriteria = [];
   categoryIds = [];
+  judgeCategoryIds = [];
+  completedCategoryIds = new Set();
 
-  state = {
+  initialState = {
+    ready: false,
     showDescription: true,
-    scores: {},
-    hasOldScores: false,
+    isProjectDone: false,
+  }
+
+  constructor(props) {
+    super(props);
+    this.state = { ...this.initialState };
   }
 
   componentDidMount() {
-    this.setState({showDescription: true});
+    this.setState(this.initialState);
     api.getCategoriesOfJudge()
-      .then((judgeCategories) => {
-        let judgeCategoryIds = judgeCategories.map((category) => {
-          return category.id;
-        })
-        
-        let projectCategories = this.props.currProject.categories;
-        let projectCategoryIds = projectCategories;
-
-        this.categoryIds = projectCategoryIds.reduce((aggr, projectCatId) => {
-          console.log(judgeCategoryIds)
-          console.log(projectCatId)
-          if (judgeCategoryIds.includes(projectCatId)) {
-            aggr.push(projectCatId);
-          }
-          return aggr;
-        }, []);
-
-        console.log(this.categoryIds);
-      });
-    console.log(this.props.currProject.categories);
+      .then((judgeCategoryIds) => {
+        this.judgeCategoryIds = judgeCategoryIds;
+      }).then(() => this.findCategoriesUnion())
+      .then(() => this.setState({ ready: true }))
   }
 
   componentDidUpdate(prevProps) {
     if (this.props.currProject !== prevProps.currProject) {
-      this.setState({showDescription: true});
+      this.setState(this.initialState, () => {
+        this.completedCategoryIds = new Set();
+        this.findCategoriesUnion()
+          .then(() => this.setState({ ready: true }))
+      });
     }
   }
 
-  handleVoteControls = (event, params) => {
+  async findCategoriesUnion() {
+    let projectCategories = this.props.currProject.categories;
+    let projectCategoryIds = projectCategories.map((item) => item.id);
+
+    this.categoryIds = projectCategoryIds.reduce((aggr, projectCatId) => {
+      console.log(this.judgeCategoryIds)
+      console.log(projectCatId)
+      if (this.judgeCategoryIds.includes(projectCatId)) {
+        aggr.push(projectCatId);
+      }
+      return aggr;
+    }, []);
+
+    return;
+  }
+
+  onScoreEvent = (event, params) => {
+    const { categoryId } = params;
     switch (event) {
       case 'toggleDesc':
         this.setState(state => {
@@ -68,17 +78,20 @@ export default class DisplayProject extends React.Component {
           }
         });
         break;
-      case 'scoreChange':
-        // this.handleScoreChange(params.value, params.criterion);
+      case 'loadedOldVotes':
+        this.completedCategoryIds.add(categoryId);
+        console.log(this.completedCategoryIds, this.categoryIds)
+        if (this.completedCategoryIds.size === this.categoryIds.length) {
+          this.setState({ isProjectDone: true });
+        }
         break;
-      case 'incremental':
-        // this.handleIncrementalScoreChange(params.delta, params.criterion);
-        break;
-      case 'focus':
-        // this.scoresBeforeFocus[params.criterion.accessor] = this.state.scores[params.criterion.accessor];
-        break;
-      case 'blur':
-        // this.handleBlur(params.criterion);
+      case 'castedVote':
+        this.completedCategoryIds.add(categoryId);
+        console.log(this.completedCategoryIds, this.categoryIds)
+        if (this.completedCategoryIds.size === this.categoryIds.length) {
+          this.setState({ isProjectDone: true });
+          this.props.handleButtons('next');
+        }
         break;
       default:
         break;
@@ -86,18 +99,29 @@ export default class DisplayProject extends React.Component {
   }
 
   render() {
+    if (!this.state.ready) {
+      return null
+    }
+
     return (
       <React.Fragment>
 
-        { (this.props.projectsLeftCount === 0 || this.state.hasOldScores) &&  <CompleteBanner isAllDone={(this.props.projectsLeftCount === 0)}></CompleteBanner>}
-        <section className="section voting-container">
-          <div className="columns">
+        { (this.props.projectsLeftCount === 0 || this.state.isProjectDone) &&  
+          <CompleteBanner
+            isAllDone={(this.props.projectsLeftCount === 0)}
+          />
+        }
+
+        <div className="main-container__displayproject columns">
   
             <div className="column">
   
               <ProjectHeader project={this.props.currProject} />
   
-              <div className={"container "+ (this.state.showDescription ? "" : "is-hidden-mobile")}>
+              <div className={
+                "container "
+                + (this.state.showDescription ? "" : "is-hidden-mobile")
+              }>
                 <ProjectDescription
                   desc={this.props.currProject.description}
                 /> 
@@ -107,25 +131,37 @@ export default class DisplayProject extends React.Component {
   
             <div className="column voting-column right-panel">
   
-              <div className={"container vote-scores "+(this.state.showDescription ? "is-hidden-mobile" : "")}>
-                <ProjectScores
-                  criteria={this.votingCriteria}
-                  scores={this.state.scores}
-                  handleVoteControls={this.handleVoteControls}
-                  categoryId="aaa"
-                  projectId={this.props.currProject.objectId}
-                />
-              </div>
+              { this.categoryIds.map( (categoryId) => {
+                  return (
+                    <div
+                      key={categoryId}
+                      className={
+                        "container vote-scores "
+                        + (this.state.showDescription ? "is-hidden-mobile" : "")
+                      }
+                    >
+                      <ProjectScores
+                        onScoreEvent={this.onScoreEvent}
+                        categoryId={categoryId}
+                        projectId={this.props.currProject.objectId}
+                      />
+                    </div>
+                  )
+              })}
   
               <Nav
                 handleButtons={this.props.handleButtons}
-                hasNext={this.props.projectsLeftCount > 1}
+                hasNext={
+                  this.props.projectsLeftCount > 1
+                  || (this.props.projectsLeftCount === 1
+                      && this.state.isProjectDone)
+                }
               />
   
             </div>
   
-          </div>
-        </section>   
+        </div>
+        
       </React.Fragment>
     );
 

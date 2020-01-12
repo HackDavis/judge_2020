@@ -34,17 +34,37 @@ class Voting extends React.Component {
   }
     
   getProjects = () => {
-    let ret = api.getAllProjects()
-      .then(async (projects) => {
-        this.projects = projects;
-        await this.updateQueueStatus();
+    return api.getVoteQueue()
+      .then( (queue) => {
+        console.log(queue)
+        if (!queue || queue.length === 0) {
+          return api.createVoteQueue();
+        }
 
+        return queue;
+      }).then((queue) => {
+        console.log(queue);
+        return api.getProjects(queue);
+      }).then((projects) => {
+        this.projects = projects;
+        return this.updateCompletionStatus();
+      }).then(() => {
         this.setState({
           isProjectsLoaded: true,
-        });
+        })
+      })
 
-      });
-    return ret;
+    // let ret = api.getAllProjects()
+    //   .then(async (projects) => {
+    //     this.projects = projects;
+    //     await this.updateCompletionStatus();
+
+    //     this.setState({
+    //       isProjectsLoaded: true,
+    //     });
+
+    //   });
+    // return ret;
   }
 
   gotoNextProject = async () => {
@@ -64,21 +84,19 @@ class Voting extends React.Component {
     });
   }
 
-  updateQueueStatus = async () => {
-    const updateResults = await api.updateQueueStatus(this.projects);
+  updateCompletionStatus = async () => {
+    const updateResults = await api.updateCompletionStatus(this.projects);
     this.projects = updateResults.projects;
     let projectsLeftCount = Object.keys(this.projects).length - updateResults.count;
     this.setState({ projectsLeftCount });
   }
 
   findNextProject = async () =>  {
-    await this.updateQueueStatus();
+    await this.updateCompletionStatus();
 
     let queue = await api.getVoteQueue();
     if (!queue || queue.length === 0) {
-      // TODO: make createVoteQueue return queue
-      await api.createVoteQueue();
-      queue = await api.getVoteQueue();
+      queue = await api.createVoteQueue();
       console.log(queue);
     }
 
@@ -131,11 +149,15 @@ class Voting extends React.Component {
         }
       });
     } else if (val === 'view-all') {
-      this.setState(state => {
-        return {
-          viewAll: !state.viewAll
-        }
-      });
+      api.updateCompletionStatus(this.projects)
+        .then((updated) => {
+          this.projects = updated.projects;
+          this.setState(state => {
+            return {
+              viewAll: !state.viewAll
+            }
+          });
+        })
     } else if (val === 'toggleDesc') {
       this.setState(state => {
         return {

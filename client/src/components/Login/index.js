@@ -63,11 +63,13 @@ export default class Login extends React.Component {
     return (
       <React.Fragment>
         <Header />
-        <LoginInput 
-          handleUsernameChange={this.handleUsernameChange}
-          handlePasswordChange={this.handlePasswordChange}
-          handleSubmit={this.handleSubmit}
-        />
+        <div className="main-container">
+          <LoginInput 
+            handleUsernameChange={this.handleUsernameChange}
+            handlePasswordChange={this.handlePasswordChange}
+            handleSubmit={this.handleSubmit}
+          />
+        </div>
       </React.Fragment>
     );
   }

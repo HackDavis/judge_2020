@@ -18,40 +18,20 @@ function Nav({ handleViewAll }) {
   )
 }
 
-export default function ViewAll({ currProjectId, handleButtons }) {
-  const [projects, setProjects] = useState([]);
-
+export default function ViewAll(props) {
   useEffect(() => {
-    let queue = [];
-    let viewableProjects;
-    api.getAllProjects()
-      .then( (projects) => {        
-        return api.updateQueueStatus(projects);
-      }).then( ({projects}) => {
-        console.log(projects);
-        viewableProjects = projects;
-        return api.getVoteQueue();
-      }).then( (queue) => {
-        viewableProjects = Object.values(viewableProjects).reduce((aggr, project) => {
-          if (queue.includes(project.objectId)) {
-            aggr.push(project);
-          }
-          return aggr;
-        }, [])
-        
-        setProjects(viewableProjects);
-      })
-  }, [projects]);
-  
+    console.log(props.projects)
+  }, [props.projects])
+
   return (
     <section className="section voting-container">
       <ProjectsList
-        currProjectId={currProjectId}
-        projects={projects}
-        handleButtons={handleButtons}
+        currProjectId={props.currProjectId}
+        projects={props.projects}
+        handleButtons={props.handleButtons}
       />
       <Nav
-        handleViewAll={() => handleButtons('view-all')}
+        handleViewAll={() => props.handleButtons('view-all')}
       />
     </section>   
   )

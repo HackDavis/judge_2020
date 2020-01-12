@@ -12,6 +12,18 @@ code {
     monospace;
 }
 
+.main-container {
+  width: 100vw;
+}
+
+@media screen and (min-width: 1024px) {
+  .main-container {
+    /* todo: uncomment */
+    /* height: calc(100vh - 3.25rem); */
+    overflow-y: hidden;
+  } 
+}
+
 .short-container {
   padding-top: 0.75em;
   padding-bottom: 0.75em;

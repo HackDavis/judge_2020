@@ -1,0 +1,50 @@
+.vote-row {
+  grid-column: 1 / 3;
+  padding:0;
+  margin:0;
+  color: #303030;
+  padding: 0.5em;
+  min-height: 5em;
+}
+
+.vote-row.vote-row-border {
+  border-bottom: 1px solid #dddddd;
+}
+
+div.vote-row-title {
+  grid-column: 1 / 2;
+  margin: 0.25rem;
+  margin-right: 1rem;
+  display: flex;
+  flex-direction:column;
+  justify-content: center;
+  line-height: 1em;
+  flex-grow: 1;
+  text-align: left;
+}
+
+.rubric-item-name {
+  font-weight: 800;
+  padding: 0.5em 0 0.5em 0;
+  flex-grow: auto;
+  justify-content: flex-start;
+}
+
+.rubric-item-desc {
+  color: #666666;
+  font-weight: 600;
+  font-size: 0.9em;
+  line-height: 0.9em;
+  height: 0.9em;
+  justify-content: flex-start;
+}
+
+div.vote-input {
+  grid-column: 2 / 3;
+  display: flex;
+  /* flex-basis: 100px; */
+  align-items: center;
+  text-align: center; 
+  justify-content: center;
+  font-size: 1.25em;
+}

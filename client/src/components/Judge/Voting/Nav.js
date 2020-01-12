@@ -1,8 +1,11 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 
 function Nav ({handleButtons, hasNext}) {
+  useEffect(() => {
+    console.log(hasNext)
+  }, [hasNext])
   return (
     <div className="container short-container no-padding-bottom">
       <div className="columns is-mobile">

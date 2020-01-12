@@ -11,21 +11,25 @@ let cloudFuncs = {
   'getAllUsers': getAllUsers,
   'updateUser': updateUserHandler,
 
-  'createVoteQueue': createVoteQueueHandler,
-  'getVoteQueue': getVoteQueue,
-  'saveVotes': saveVotesHandler,
-  'getVotes': getVotesHandler,
+  'createVoteQueue': onCreateVoteQueue,
+  'getVoteQueue': onGetVoteQueue,
+  'saveVotes': onSaveVotes,
+  'getVotes': onGetVotes,
+  'getCompletionStatus': onGetCompletionStatus,
+  'getJudgesPick': onGetJudgesPick,
 
+  'getProjects': onGetProjects,
   'getAllProjects': getAllProjects,
-  'getProject': getProject,
+  'getProject': onGetProject,
 
   'getGeneralCriteria': getGeneralCriteria,
   'addGeneralCriteria': addGeneralCriteria,
   'updateCriteria': updateCriteria,
   'deleteCriteria': deleteCriteria,
 
-  'getCategoriesOfJudge': getCategoriesOfJudgeHandler,
+  'getCategoriesOfJudge': onGetCategoriesOfJudge,
   'getAllCategories': getAllCategories,
+  'getCategory': getCategory,
   'setCategoriesOfJudge': setCategoriesOfJudgeHandler,
   'setCategoriesOfJudge': JudgeHandler.onSetCategoriesOfJudge,
 }
@@ -78,7 +82,7 @@ async function parseCsv(csv) {
             let categories = [];
             for (categoryName of categoryNames) {
               categoryName = categoryName.trim();
-              let category = await getCategory(categoryName, true);
+              let category = await getCategoryByName(categoryName, true);
               categories.push(category);
             }
 
@@ -156,7 +160,7 @@ async function getAllUsers(request) {
 }
 
 async function updateUserHandler(request) {
-
+  // todo: implement
 }
 
 /*
@@ -319,37 +323,45 @@ async function updateCriteria(request) {
 * Votes
 */ 
 
-async function saveVotesHandler(request) {
-  const {time, projectObjId, categoryId, scores, cast} = request.params;
+async function onSaveVotes(request) {
+  const {time, projectObjId, categoryId, scores, isJudgesPick} = request.params;
   const user = request.user;
 
   let project;
+
+  if (isJudgesPick) {
+    let existingPick = await getJudgesPick(user, categoryId);
+    if (existingPick !== null && existingPick.id !== projectObjId) {
+      throw new Error('Judge\'s pick already selected');
+    }
+  }
 
   return new Parse.Query(Project).get(projectObjId, useMasterKey)
     .then(retrieved => {
       project = retrieved;
 
+      let categoryPtr = new Category();
+      categoryPtr.id = categoryId;
+
       const voteQuery = new Parse.Query(Vote);
       voteQuery.equalTo('project', project);
       voteQuery.equalTo('judge', user);
+      voteQuery.equalTo('category', categoryPtr);
+
       voteQuery.limit(1000);
 
       return voteQuery.find(useMasterKey);
     }).then(oldVotes => {
-      let toDestroy = [];
-      if (oldVotes.length) {
-        oldVotes.forEach(oldVote => {
-          if (oldVote.get('time') > time) {
-            throw new Error('Newer vote already saved.');
-          } else if (oldVote.get('casted') === false || cast) {
-            // toDestroy.push(oldVote);
-            toDestroy.push(oldVote.destroy());
-          }
-        });
+      if (oldVotes.length == 0) {
+        return;
       }
 
-      // toDestroy.forEach(oldVote => oldVote.destroy());
-      return Promise.all(toDestroy);
+      let oldVote = oldVotes[0];
+      if (oldVote.get('time') > time) {
+        throw new Error('Newer vote already saved.');
+      }
+
+      return oldVote.destroy();
     }).then(() => {
       return new Parse.Query(Category).get(categoryId, useMasterKey);
     }).then((category) => {
@@ -358,7 +370,7 @@ async function saveVotesHandler(request) {
       newVote.set('judge', user);
       newVote.set('votes', scores);
       newVote.set('time', time);
-      newVote.set('casted', cast);
+      newVote.set('isJudgesPick', isJudgesPick)
       newVote.set('category', category);
 
       return newVote.save();
@@ -370,17 +382,119 @@ async function saveVotesHandler(request) {
     });
 }
 
-async function getVotesHandler(request) {
-  const user = request.user;
+async function onGetVotes(request) {
+  const { projectId, categoryId, judgeId} = request.params;
+  let user;
+  if (judgeId) {
+    if (!await UserHandler.isAdmin(request.user)) {
+      throw new Error('Not admin');
+    }
 
-  if (request.params.hasOwnProperty("projectId")) {
-    return getProjectVotes(user, request.params.projectId);
+    let query = new Parse.Query(User)
+    user = await query.get(judgeId);
   } else {
-    return getAllVotes(user);
+    user = request.user;
   }
+
+  return getProjectVotes(user, projectId, categoryId);
 }
 
-async function getProjectVotes(user, projectObjId) {
+async function onGetCompletionStatus(request) {
+  let { judgeId, allProjects, projects } = request.params;
+
+  let judge;
+  if (judgeId) {
+    if (!await UserHandler.isAdmin(request.user)) {
+      throw new Error('Must be admin to query specific judge\'s votes');
+    }
+
+    let query = new Parse.Query(User);
+    judge = await query.get(judgeId);
+  } else {
+    judge = request.user;
+  }
+
+  if (allProjects) {
+    projects = await getVoteQueue(judge);
+  }
+
+  let userCategoryIds = await getCategoryIdsOfJudge(judge);
+  let numComplete = 0;
+  let numPending = 0;
+  
+  let projectsStatus = {};
+  for (projectId of projects) {
+    let projectCategoryIds = await getCategoryIdsOfProject(projectId);
+    let categoryIds = [];
+    for (id of projectCategoryIds) {
+      if (userCategoryIds.includes(id)) {
+        categoryIds.push(id);
+      }
+    }
+    let categoriesPending = 0;
+
+    for (categoryId of categoryIds) {
+      let vote = await getProjectVotes(judge, projectId, categoryId);
+      if (vote === null) {
+       categoriesPending++; 
+      }
+    }
+    
+    let projectComplete = (0 === categoriesPending);
+    if (projectComplete) {
+      numComplete++;
+    } else {
+      numPending++;
+    }
+
+    projectsStatus[projectId] = projectComplete;
+  }
+
+  let resp = {
+    numProjects: projects.length,
+    numComplete,
+    numPending,
+    projectCompletions: projectsStatus,
+  }
+
+  return resp;
+}
+
+async function onGetJudgesPick(request) {
+  const { judgeId, categoryId } = request.params;
+  let judge;
+  if (judgeId) {
+    if (!await UserHandler.isAdmin(request.user)) {
+      throw new Error('Not admin');
+    }
+
+    let query = new Parse.Query(User)
+    judge = await query.get(judgeId);
+  } else {
+    judge = request.user;
+  }
+
+  return getJudgesPick(judge, categoryId);
+}
+
+async function getJudgesPick(judge, categoryId) {
+  const voteQuery = new Parse.Query(Vote);
+  voteQuery.equalTo('judge', judge);
+  let ptr = new Category();
+  ptr.id = categoryId;
+  voteQuery.equalTo('category', ptr);
+  voteQuery.equalTo('isJudgesPick', true);
+  voteQuery.limit(1000);
+  
+  let queryResults = await voteQuery.find();
+  if (queryResults.length == 0) {
+    return null;
+  }
+
+  return queryResults[0];
+}
+
+async function getProjectVotes(user, projectObjId, categoryId) {
   return new Parse.Query(Project)
     .get(projectObjId, useMasterKey)
     .then(retrieved => {
@@ -388,22 +502,19 @@ async function getProjectVotes(user, projectObjId) {
       const voteQuery = new Parse.Query(Vote);
       voteQuery.equalTo('project', project);
       voteQuery.equalTo('judge', user);
+      let ptr = new Category();
+      ptr.id = categoryId;
+      voteQuery.equalTo('category', ptr);
       voteQuery.limit(1000);
 
       return voteQuery.find(useMasterKey);
     }).then(oldVotes => {
-      let votesCasted;
-      let votesWip;
-      if (oldVotes.length) {
-        oldVotes.forEach(oldVote => {
-          if (oldVote.get('casted')) {
-            votesCasted = oldVote.toJSON();
-          } else {
-            votesWip = oldVote.toJSON();
-          }
-        });
+      
+      if (oldVotes.length == 0) {
+        return null;
       }
-      return { votesCasted, votesWip };
+      
+      return oldVotes[0].toJSON();
     }).catch(err => {
       console.log(err);
     });
@@ -424,14 +535,20 @@ async function getAllVotes(user) {
     .catch(err => console.log(err));
 }
 
-async function createVoteQueueHandler(request) {
+async function onCreateVoteQueue(request) {
   const user = request.user;
+  return createVoteQueue(user);
+};
+
+async function createVoteQueue(user) {
   const queryExisting = new Parse.Query(Queue);
   queryExisting.equalTo('user', user);
   queryExisting.limit(1000);
   const existing = await queryExisting.find(useMasterKey);
 
-  return getCategoriesOfJudge(user)
+  let queueItems;
+
+  return getCategoryIdsOfJudge(user)
     .then((categories) => {
       if (categories.length == 0) {
         throw new Error('This user is not assigned to any categories.');
@@ -449,19 +566,25 @@ async function createVoteQueueHandler(request) {
       return queryProjects.find(useMasterKey);
     }).then(projects => {
       const queue = existing.length ? existing[0] : new Queue();
-      projects = projects.map((project) => project.id);
+      queueItems = projects.map((project) => project.id);
       queue.set('user', user);
-      queue.set('items', projects);
+      queue.set('items', queueItems);
       return queue.save(null, useMasterKey);
+    }).then(() => {
+      return queueItems;
     }).catch(err => console.log(err));
-};
+}
 
 /*
  * Projects
  */ 
 
-async function getVoteQueue(request) {
-  const user = request.user;
+async function onGetVoteQueue(request) {
+  const { user } = request.params;
+  return getVoteQueue(user);
+}
+
+async function getVoteQueue(user) {
   const query = new Parse.Query(Queue);
   query.equalTo('user', user);
   query.limit(1000);
@@ -477,8 +600,22 @@ async function getVoteQueue(request) {
     }).catch(err => console.log(err));
 }
 
+async function onGetProjects(request) {
+  const { projectIds } = request.params;
+  let projects = {};
+  for (id of projectIds) {
+    let obj = await getProject(id);
+    projects[id] = obj.toJSON();
+  }
+
+  return projects;
+}
+
 async function getAllProjects(request) {
-  // TODO: check role
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
   let query = new Parse.Query(Project);
   query.limit(1000);
   return query.find()
@@ -496,22 +633,39 @@ async function getAllProjects(request) {
     });
 }
 
-async function getProject(request) {
-  // TODO: check role
-  let query = new Parse.Query(Project);
-  let ret = query.get(request.params.projectId)
-    .then(project => {
-        project = project.toJSON();
-        project.skipped = false;
-        project.done = false;
+async function onGetProject(request) {
+  return getProject(request.params.projectId);
+}
 
-      return project
-    });
+async function getProject(projectId) {
+  let query = new Parse.Query(Project);
+  let ret = query.get(projectId);
 
   return ret;
 }
 
-async function getCategoriesOfJudgeHandler(request) {
+/**
+ * Get the categories of a project
+ * @param {string} projectId objectId of project
+ */
+async function getCategoriesOfProject(projectId) {
+  let query = new Parse.Query(Project);
+  let ret = query.get(projectId)
+    .then(project => {
+      return project.get('categories');
+    })
+
+  return ret;
+}
+
+async function getCategoryIdsOfProject(projectId) {
+  return getCategoriesOfProject(projectId)
+    .then((categories) => {
+      return categories.map((category) => category.id);
+    });
+}
+
+async function onGetCategoriesOfJudge(request) {
   let judge;
 
   if (request.params.judgeId) {
@@ -527,7 +681,7 @@ async function getCategoriesOfJudgeHandler(request) {
     judge = request.user;
   }
 
-  return getCategoriesOfJudge(judge);
+  return getCategoryIdsOfJudge(judge);
 }
 
 async function getCategoriesOfJudge(judge) {
@@ -541,13 +695,15 @@ async function getCategoriesOfJudge(judge) {
       }
 
       let categories = obj[0].get('categories');
-      return categories.map((category) => category.id);
+      return categories;
     })
-    // .then((results) => {
-    //   return results.toJSON();
-    // });
 
   return ret;
+}
+
+async function getCategoryIdsOfJudge(judge) {
+  return getCategoriesOfJudge(judge)
+    .then((categories) => categories.map((category) => category.id))
 }
 
 async function getAllCategories(request) {
@@ -561,7 +717,13 @@ async function getAllCategories(request) {
   return query.find(useMasterKey);
 }
 
-async function getCategory(name, createIfNotExists) {
+async function getCategory(request) {
+  const { categoryId } = request.params;
+  let query = new Parse.Query(Category);
+  return query.get(categoryId, useMasterKey).then((cat) => cat.toJSON());
+}
+
+async function getCategoryByName(name, createIfNotExists) {
   let categoryQuery = new Parse.Query(Category);
   categoryQuery.equalTo('name', name);
 
