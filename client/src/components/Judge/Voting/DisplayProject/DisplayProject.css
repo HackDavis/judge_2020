@@ -1,16 +1,23 @@
-.main-container__displayproject {
-  padding: 0rem 1.5rem;
-  height: 100%;
+/* CSS GRID */
+
+.margin-1__dp {
+  margin: 0.5rem 0;
+}
+
+.main-container__dp {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 1rem;
+  padding: 1.5rem 2rem;
+  width: 100vw;
+}
+
+button.toggleDisplay__dp {
   width: 100%;
 }
 
-.voting-column.right-panel {
-  max-height: 100%;
-  overflow-y: auto; /* todo: change */
-}
-
-.vote-scores {
-  overflow-y: auto;
+.main-panel__dp {
+  grid-column-start: 1 / 2;
 }
 
 .rubric {
@@ -18,3 +25,57 @@
   grid-template-columns: auto min-content;
   grid-auto-rows: 4em;
 }
+
+
+@media screen and (min-width: 1024px) {
+  .main-container__dp {
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 3rem;
+    height: 100%;
+  }
+
+  .main-panel__dp {
+    height: 100%;
+  }
+
+  button.toggleDisplay__dp {
+    display: none;
+  }
+  
+  .info-panel__dp.main-panel__dp {
+    display: flex;
+    flex-direction: column;
+    grid-column-start: 1 / 2;
+    height: 1fr;
+    overflow:hidden;
+  }
+
+  .project-description__dp {
+    flex: 1;
+  }
+
+  .project-description__dp > .control{
+    height: 100%;
+  }
+
+  .project-description__dp > .control > textarea {
+    height: 100%;
+  }
+
+  .voting-panel__dp.main-panel__dp {
+    grid-column-start: 2 / 3;
+    height: 1fr;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav__dp {
+    flex: auto;
+  }
+
+  .voting-panel__dp > .rubric {
+    flex: 1;
+  }
+}
+

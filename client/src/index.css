@@ -1,3 +1,7 @@
+html {
+  overflow-y: auto !important;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
@@ -18,8 +22,7 @@ code {
 
 @media screen and (min-width: 1024px) {
   .main-container {
-    /* todo: uncomment */
-    /* height: calc(100vh - 3.25rem); */
+    height: calc(100vh - 3.25rem);
     overflow-y: hidden;
   } 
 }

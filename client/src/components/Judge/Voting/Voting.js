@@ -11,8 +11,12 @@ class Voting extends React.Component {
     state: PropTypes.object,
     dispatch: PropTypes.func,
   }
-    
-  projects = {};
+  
+  queue;
+  projects;
+  categories;
+  progress;
+  
   state = {
     currProjectId: undefined,
     isProjectsLoaded: false,
@@ -34,37 +38,21 @@ class Voting extends React.Component {
   }
     
   getProjects = () => {
-    return api.getVoteQueue()
-      .then( (queue) => {
-        console.log(queue)
-        if (!queue || queue.length === 0) {
-          return api.createVoteQueue();
-        }
+    return api.getVotingData(true)
+      .then( (votingData) => {
+        console.log(votingData);
+        const { queue, projects, categories, progress } = votingData;
 
-        return queue;
-      }).then((queue) => {
-        console.log(queue);
-        return api.getProjects(queue);
-      }).then((projects) => {
+        this.queue = queue;
         this.projects = projects;
-        return this.updateCompletionStatus();
+        this.categories = categories;
+        this.progress = progress;
+
       }).then(() => {
         this.setState({
           isProjectsLoaded: true,
         })
       })
-
-    // let ret = api.getAllProjects()
-    //   .then(async (projects) => {
-    //     this.projects = projects;
-    //     await this.updateCompletionStatus();
-
-    //     this.setState({
-    //       isProjectsLoaded: true,
-    //     });
-
-    //   });
-    // return ret;
   }
 
   gotoNextProject = async () => {
@@ -84,15 +72,22 @@ class Voting extends React.Component {
     });
   }
 
-  updateCompletionStatus = async () => {
-    const updateResults = await api.updateCompletionStatus(this.projects);
-    this.projects = updateResults.projects;
-    let projectsLeftCount = Object.keys(this.projects).length - updateResults.count;
-    this.setState({ projectsLeftCount });
+  updateVotingData = async () => {
+    return api.getVotingData()
+      .then( (votingData) => {
+        console.log(votingData);
+        const { numPending, progress } = votingData;
+        this.progress = progress;
+        this.setState({ projectsLeftCount: numPending });
+      });
+    // const updateResults = await api.updateCompletionStatus(this.projects);
+    // this.projects = updateResults.projects;
+    // let projectsLeftCount = Object.keys(this.projects).length - updateResults.count;
+    // this.setState({ projectsLeftCount });
   }
 
   findNextProject = async () =>  {
-    await this.updateCompletionStatus();
+    await this.updateVotingData();
 
     let queue = await api.getVoteQueue();
     if (!queue || queue.length === 0) {
@@ -109,8 +104,10 @@ class Voting extends React.Component {
     let sliceAfterCurr = queue.slice(posInQ+1);
     let nextProjectId = sliceAfterCurr.find((itemId) => {
       console.log(itemId);
-      let project = this.projects[itemId];
-      return (!project.done);
+      // let project = this.projects[itemId];
+      // return (!project.done);
+
+      return !this.progress[itemId].isComplete;
     });
 
     if (nextProjectId !== undefined) {
@@ -122,8 +119,9 @@ class Voting extends React.Component {
 
     nextProjectId = sliceBeforeCurr.find((itemId) => {
       console.log(itemId);
-      let project = this.projects[itemId];
-      return (!project.done);
+      // let project = this.projects[itemId];
+      // return (!project.done);
+      return !this.progress[itemId].isComplete;
     });
 
     if (nextProjectId !== undefined) {
@@ -149,9 +147,8 @@ class Voting extends React.Component {
         }
       });
     } else if (val === 'view-all') {
-      api.updateCompletionStatus(this.projects)
-        .then((updated) => {
-          this.projects = updated.projects;
+      this.updateVotingData()
+        .then(() => {
           this.setState(state => {
             return {
               viewAll: !state.viewAll
@@ -203,7 +200,9 @@ class Voting extends React.Component {
 
     return (
       <DisplayProject
-        currProject={this.projects[this.state.currProjectId]}
+        progress={this.progress[this.state.currProjectId]}
+        categories={this.categories}
+        project={this.projects[this.state.currProjectId]}
         handleButtons={this.handleButtons}
         projectsLeftCount={this.state.projectsLeftCount}
       />

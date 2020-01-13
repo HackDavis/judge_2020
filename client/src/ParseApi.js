@@ -5,6 +5,13 @@ export default class ParseApi {
     return Parse.Cloud.run('isAdmin');
   }
 
+  /**
+   * 
+   * @param {boolean} expand Expand project and category data
+   */
+  static getVotingData(expand) {
+    return Parse.Cloud.run('getVotingData', { expand });
+  }
   static getAllProjects() {
     return Parse.Cloud.run('getAllProjects');
   }

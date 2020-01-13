@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import logo from '../../../assets/images/logo-small.png';
+import logo from '../../../assets/images/logo.png';
 
 export default function Navbar(props) {
   const [expandNav, setExpandNav] = useState(false);

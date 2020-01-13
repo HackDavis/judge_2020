@@ -11,6 +11,7 @@ let cloudFuncs = {
   'getAllUsers': getAllUsers,
   'updateUser': updateUserHandler,
 
+  'getVotingData': onGetVotingData,
   'createVoteQueue': onCreateVoteQueue,
   'getVoteQueue': onGetVoteQueue,
   'saveVotes': onSaveVotes,
@@ -29,7 +30,7 @@ let cloudFuncs = {
 
   'getCategoriesOfJudge': onGetCategoriesOfJudge,
   'getAllCategories': getAllCategories,
-  'getCategory': getCategory,
+  'getCategory': onGetCategory,
   'setCategoriesOfJudge': setCategoriesOfJudgeHandler,
   'setCategoriesOfJudge': JudgeHandler.onSetCategoriesOfJudge,
 }
@@ -399,6 +400,87 @@ async function onGetVotes(request) {
   return getProjectVotes(user, projectId, categoryId);
 }
 
+async function onGetVotingData(request) {
+  let { expand } = request.params; // expand projects and categories
+  let judge = request.user;
+  let userCategoryIds = await getCategoryIdsOfJudge(judge);
+  let projectsQueue = await getVoteQueue(judge);
+
+  
+  let numPending = 0;
+  let progress = {};
+  let projectData = {};
+  let categoryData = {};
+
+  for (projectId of projectsQueue) {
+
+    /* Get project data and reduce categories to only ids of judge categories */
+
+    let project = await getProject(projectId);
+    project = project.toJSON();
+    project.categories = project.categories.reduce((aggr, category) => {
+
+      let id = category.objectId;
+      if (userCategoryIds.includes(id)) {
+        aggr.push(id);
+      }
+
+      return aggr;
+    }, [])
+    projectData[projectId] = project;
+
+
+    /* Get category data and get voting progress */
+
+    progress[projectId] = {
+      isComplete: undefined,
+      isCategoryComplete: {},
+    }
+
+    let categoryIds = project.categories;
+    let categoriesPending = 0;
+    for (categoryId of categoryIds) {
+      
+      // Category Data
+      if (expand && !categoryData[categoryId]) {
+        let category = await getCategory(categoryId);
+        category = category.toJSON();
+        categoryData[categoryId] = category;
+      }
+
+      // Category progress
+      let vote = await getProjectVotes(judge, projectId, categoryId);
+      let categoryComplete = (vote !== null);
+      progress[projectId].isCategoryComplete[categoryId] = categoryComplete;
+      if (!categoryComplete) {
+        categoriesPending++; 
+      }
+
+    }
+    
+    // Project progress
+    let projectComplete = (0 === categoriesPending);
+    if (!projectComplete) {
+      numPending++;
+    }
+    progress[projectId].isComplete = projectComplete;
+
+  }
+
+  let resp = {
+    queue: projectsQueue,
+    numPending,
+    progress: progress,
+  }
+
+  if (expand) {
+    resp.projects = projectData;
+    resp.categories = categoryData;
+  }
+
+  return resp;
+}
+
 async function onGetCompletionStatus(request) {
   let { judgeId, allProjects, projects } = request.params;
 
@@ -518,21 +600,6 @@ async function getProjectVotes(user, projectObjId, categoryId) {
     }).catch(err => {
       console.log(err);
     });
-}
-
-async function getAllVotes(user) {
-  const query = new Parse.Query(Vote);
-  query.equalTo("judge", user);
-  query.limit(1000);
-  return query.find(useMasterKey)
-    .then(votes => {
-      votes = votes.map((vote) => {
-        let json = vote.toJSON();
-        return json;
-      });
-      return votes;
-    })
-    .catch(err => console.log(err));
 }
 
 async function onCreateVoteQueue(request) {
@@ -717,10 +784,15 @@ async function getAllCategories(request) {
   return query.find(useMasterKey);
 }
 
-async function getCategory(request) {
+async function onGetCategory(request) {
   const { categoryId } = request.params;
+  return getCategory(categoryId)
+    .then((cat) => cat.toJSON());
+}
+
+function getCategory(categoryId) {
   let query = new Parse.Query(Category);
-  return query.get(categoryId, useMasterKey).then((cat) => cat.toJSON());
+  return query.get(categoryId, useMasterKey);
 }
 
 async function getCategoryByName(name, createIfNotExists) {

@@ -40,12 +40,10 @@ const ProjectScores = class extends React.Component {
 
   componentDidMount() {
     this.getProjectCriteria()
+      .then((category) => {
+        this.category = this.props.category;
+      })
       .then(() => {
-        return api.getCategory(this.props.categoryId);
-      }).then((category) => {
-        this.category = category;
-        console.log(category)
-      }).then(() => {
         this.initScores();
       });
   }
@@ -54,11 +52,10 @@ const ProjectScores = class extends React.Component {
     if (this.props.projectId !== prevProps.projectId) {
       this.setState({showDescription: true});
       this.getProjectCriteria()
+        .then((category) => {
+          this.category = this.props.category;
+        })
         .then(() => {
-          return api.getCategory(this.props.categoryId);
-        }).then((category) => {
-          this.category = category;
-        }).then(() => {
           this.initScores();
         });
     }
@@ -92,6 +89,7 @@ const ProjectScores = class extends React.Component {
   loadOldVotes = async () =>  {
     return api.getVotes(this.props.projectId, this.props.categoryId)
       .then((oldVotes)=>{
+        console.log(this.props.projectId, this.props.categoryId, oldVotes);
         if (oldVotes) {
           let loadedScores = oldVotes.votes.reduce((aggr, vote) => {
             let category = vote.category;
@@ -216,9 +214,9 @@ const ProjectScores = class extends React.Component {
     }
   
     return (
-      <div className="container" style={{ paddingTop: '3vh', paddingBottom: '3vh', textAlign: 'center'}}>
+      <React.Fragment>
         <h3 className="title is-4 is-marginless">{this.category.name}</h3>
-        <div className="section rubric">
+        <div className="rubric">
           { this.votingCriteria.map((criterion, index) => {
             return (
               <IncrementalInput
@@ -242,7 +240,7 @@ const ProjectScores = class extends React.Component {
           castVotes={() => this.castVotes()}
         />
   
-      </div>
+      </React.Fragment>
     )
   }
 }

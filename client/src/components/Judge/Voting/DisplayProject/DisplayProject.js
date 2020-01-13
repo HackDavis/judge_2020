@@ -3,17 +3,17 @@ import propTypes from 'prop-types'
 import api from '../../../../ParseApi'
 
 import Nav from '../Nav';
-import ProjectHeader from './ProjectHeader';
-import VotingControls from './VotingControls';
-import ProjectDescription from './ProjectDescription';
+import ProjectInfo from './ProjectInfo'
 import ProjectScores from './ProjectScores';
 import CompleteBanner from '../CompleteBanner';
 
-import './DisplayProject.css';
+import './DisplayProject.css'
 
 export default class DisplayProject extends React.Component {
   static propTypes = {
-    currProject: propTypes.object,
+    progress: propTypes.object,
+    categories: propTypes.object,
+    project: propTypes.object,
     handleButtons: propTypes.func,
     projectsLeftCount: propTypes.number.isRequired,
   }
@@ -26,6 +26,7 @@ export default class DisplayProject extends React.Component {
     ready: false,
     showDescription: true,
     isProjectDone: false,
+    currCategoryId: undefined,
   }
 
   constructor(props) {
@@ -34,38 +35,48 @@ export default class DisplayProject extends React.Component {
   }
 
   componentDidMount() {
-    this.setState(this.initialState);
-    api.getCategoriesOfJudge()
-      .then((judgeCategoryIds) => {
-        this.judgeCategoryIds = judgeCategoryIds;
-      }).then(() => this.findCategoriesUnion())
-      .then(() => this.setState({ ready: true }))
+    this.setState(this.initialState, () => {
+      this.categoryIds = this.props.project.categories;
+      this.setState({ ready: true })
+    });
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.currProject !== prevProps.currProject) {
+    if (this.props.project !== prevProps.project) {
       this.setState(this.initialState, () => {
         this.completedCategoryIds = new Set();
-        this.findCategoriesUnion()
-          .then(() => this.setState({ ready: true }))
+        this.categoryIds = this.props.project.categories;
+        this.setState({ ready: true })
       });
     }
   }
 
-  async findCategoriesUnion() {
-    let projectCategories = this.props.currProject.categories;
-    let projectCategoryIds = projectCategories.map((item) => item.id);
+  initProgress = () => {
+    let progress = this.props.progress;
+    if (progress.isComplete) {
+      this.setState({
+        isProjectDone: true,
+        currCategoryId: this.categoryIds[0],
+      })
 
-    this.categoryIds = projectCategoryIds.reduce((aggr, projectCatId) => {
-      console.log(this.judgeCategoryIds)
-      console.log(projectCatId)
-      if (this.judgeCategoryIds.includes(projectCatId)) {
-        aggr.push(projectCatId);
+      return;
+    }
+
+    let currCategoryId;
+    for (let id of this.categoryIds) {
+      if (!progress.isCategoryComplete[id]) {
+        currCategoryId = id;
+        break;
       }
-      return aggr;
-    }, []);
+    }
 
-    return;
+    this.setState({ currCategoryId })
+  }
+
+  onToggleDesc = () => {
+    this.setState(({showDescription}) => {
+      return {showDescription: !showDescription}
+    })
   }
 
   onScoreEvent = (event, params) => {
@@ -112,24 +123,19 @@ export default class DisplayProject extends React.Component {
           />
         }
 
-        <div className="main-container__displayproject columns">
+        <div className="main-container__dp">
   
-            <div className="column">
-  
-              <ProjectHeader project={this.props.currProject} />
-  
-              <div className={
-                "container "
-                + (this.state.showDescription ? "" : "is-hidden-mobile")
-              }>
-                <ProjectDescription
-                  desc={this.props.currProject.description}
-                /> 
-              </div>
+            <div className="main-panel__dp info-panel__dp">
+
+              <ProjectInfo
+                project={this.props.project}
+                showDescription={this.state.showDescription}
+                onToggleDesc={this.onToggleDesc}
+              />
   
             </div>
   
-            <div className="column voting-column right-panel">
+            <div className="main-panel__dp voting-panel__dp">
   
               { this.categoryIds.map( (categoryId) => {
                   return (
@@ -142,8 +148,9 @@ export default class DisplayProject extends React.Component {
                     >
                       <ProjectScores
                         onScoreEvent={this.onScoreEvent}
+                        category={this.props.categories[categoryId]}
                         categoryId={categoryId}
-                        projectId={this.props.currProject.objectId}
+                        projectId={this.props.project.objectId}
                       />
                     </div>
                   )
@@ -164,6 +171,5 @@ export default class DisplayProject extends React.Component {
         
       </React.Fragment>
     );
-
   }
 }

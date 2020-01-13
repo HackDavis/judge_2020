@@ -7,7 +7,7 @@ function Nav ({handleButtons, hasNext}) {
     console.log(hasNext)
   }, [hasNext])
   return (
-    <div className="container short-container no-padding-bottom">
+    <div className="nav__dp container short-container no-padding-bottom">
       <div className="columns is-mobile">
         <div className="column is-half">
           <a href
