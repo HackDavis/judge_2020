@@ -169,18 +169,19 @@ export default class DisplayProject extends React.Component {
                 showDescription={this.state.showDescription}
               />
   
+              <div className="nav-container__dp nav-mobile__dp">
+                <Nav
+                  onVotingEvent={this.props.onVotingEvent}
+                  hasNext={
+                    this.props.projectsLeftCount > 1
+                    || (this.props.projectsLeftCount === 1
+                        && this.state.isProjectDone)
+                  }
+                />
+              </div>
+              
             </div>
 
-            <div className="nav-container__dp nav-mobile__dp">
-              <Nav
-                onVotingEvent={this.props.onVotingEvent}
-                hasNext={
-                  this.props.projectsLeftCount > 1
-                  || (this.props.projectsLeftCount === 1
-                      && this.state.isProjectDone)
-                }
-              />
-            </div>
   
         </div>
         

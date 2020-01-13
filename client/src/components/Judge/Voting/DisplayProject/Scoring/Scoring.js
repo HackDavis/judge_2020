@@ -18,7 +18,7 @@ const Scoring = function({
       key={currCategoryId}
       className={
         "vote-scores "
-        + (showDescription ? "is-hidden-mobile" : "")
+        + (showDescription ? "is-hidden-small" : "")
       }
     >
       <CategoryScores

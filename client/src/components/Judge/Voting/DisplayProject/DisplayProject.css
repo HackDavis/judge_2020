@@ -12,6 +12,7 @@
 }
 
 button.toggleDisplay__dp {
+  display: inherit;
   width: 100%;
 }
 
@@ -35,6 +36,12 @@ button.toggleDisplay__dp {
 
 .nav-mobile__dp {
   display: initial;
+}
+
+@media screen and (max-width: 1023px) {
+  .is-hidden-small {
+    display: none;
+  }
 }
 
 

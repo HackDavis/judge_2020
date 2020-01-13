@@ -18,7 +18,7 @@ const ProjectInfo = function({
 
       <div className={
         "project-description__dp padding-1__dp "
-        + (showDescription ? "" : "is-hidden-mobile")
+        + (showDescription ? "" : "is-hidden-small")
       }>
         <ProjectDescription
           desc={project.description}
