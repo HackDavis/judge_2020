@@ -4,7 +4,8 @@ import api from '../../../../ParseApi'
 
 import Nav from '../Nav';
 import ProjectInfo from './ProjectInfo'
-import ProjectScores from './ProjectScores';
+import Scoring from './Scoring'
+import ProjectScores from './Scoring/CategoryScores';
 import CompleteBanner from '../CompleteBanner';
 
 import './DisplayProject.css'
@@ -12,9 +13,9 @@ import './DisplayProject.css'
 export default class DisplayProject extends React.Component {
   static propTypes = {
     progress: propTypes.object,
-    categories: propTypes.object,
+    categoryData: propTypes.object,
     project: propTypes.object,
-    handleButtons: propTypes.func,
+    onVotingEvent: propTypes.func,
     projectsLeftCount: propTypes.number.isRequired,
   }
 
@@ -37,6 +38,7 @@ export default class DisplayProject extends React.Component {
   componentDidMount() {
     this.setState(this.initialState, () => {
       this.categoryIds = this.props.project.categories;
+      this.updateProgress();
       this.setState({ ready: true })
     });
   }
@@ -46,18 +48,21 @@ export default class DisplayProject extends React.Component {
       this.setState(this.initialState, () => {
         this.completedCategoryIds = new Set();
         this.categoryIds = this.props.project.categories;
+        this.updateProgress();
         this.setState({ ready: true })
       });
     }
   }
 
-  initProgress = () => {
+  updateProgress = () => {
     let progress = this.props.progress;
     if (progress.isComplete) {
       this.setState({
         isProjectDone: true,
         currCategoryId: this.categoryIds[0],
       })
+
+      console.log(this.categoryIds[0]);
 
       return;
     }
@@ -69,6 +74,8 @@ export default class DisplayProject extends React.Component {
         break;
       }
     }
+
+    console.log(currCategoryId);
 
     this.setState({ currCategoryId })
   }
@@ -101,8 +108,13 @@ export default class DisplayProject extends React.Component {
         console.log(this.completedCategoryIds, this.categoryIds)
         if (this.completedCategoryIds.size === this.categoryIds.length) {
           this.setState({ isProjectDone: true });
-          this.props.handleButtons('next');
+          this.props.onVotingEvent('next');
         }
+
+        this.props.onVotingEvent('updateVotingData')
+          .then(() => {
+            this.updateProgress();
+          })
         break;
       default:
         break;
@@ -132,39 +144,42 @@ export default class DisplayProject extends React.Component {
                 showDescription={this.state.showDescription}
                 onToggleDesc={this.onToggleDesc}
               />
+
+              <div className="nav-container__dp nav-desktop__dp">
+                <Nav
+                  onVotingEvent={this.props.onVotingEvent}
+                  hasNext={
+                    this.props.projectsLeftCount > 1
+                    || (this.props.projectsLeftCount === 1
+                        && this.state.isProjectDone)
+                  }
+                />
+              </div>
   
             </div>
   
             <div className="main-panel__dp voting-panel__dp">
   
-              { this.categoryIds.map( (categoryId) => {
-                  return (
-                    <div
-                      key={categoryId}
-                      className={
-                        "container vote-scores "
-                        + (this.state.showDescription ? "is-hidden-mobile" : "")
-                      }
-                    >
-                      <ProjectScores
-                        onScoreEvent={this.onScoreEvent}
-                        category={this.props.categories[categoryId]}
-                        categoryId={categoryId}
-                        projectId={this.props.project.objectId}
-                      />
-                    </div>
-                  )
-              })}
+              <Scoring
+                projectId={this.props.project.objectId}
+                categoryData={this.props.categoryData}
+                categoryIds={this.categoryIds}
+                currCategoryId={this.state.currCategoryId}
+                onScoreEvent={this.onScoreEvent}
+                showDescription={this.state.showDescription}
+              />
   
+            </div>
+
+            <div className="nav-container__dp nav-mobile__dp">
               <Nav
-                handleButtons={this.props.handleButtons}
+                onVotingEvent={this.props.onVotingEvent}
                 hasNext={
                   this.props.projectsLeftCount > 1
                   || (this.props.projectsLeftCount === 1
                       && this.state.isProjectDone)
                 }
               />
-  
             </div>
   
         </div>

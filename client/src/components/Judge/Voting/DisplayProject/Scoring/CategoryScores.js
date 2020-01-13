@@ -2,10 +2,8 @@ import React from 'react';
 
 import propTypes from 'prop-types';
 import IncrementalInput from './IncrementalInput';
-import JudgesPick from './JudgesPick'
-import VotingControls from './VotingControls';
 
-import api from '../../../../ParseApi'
+import api from '../../../../../ParseApi'
 
 const CastVotesButton = function({castVotes}) {
   return (
@@ -21,10 +19,11 @@ const CastVotesButton = function({castVotes}) {
   );
 }
 
-const ProjectScores = class extends React.Component {
+const CategoryScores = class extends React.Component {
   static propTypes = {
     onScoreEvent: propTypes.func,
     categoryId: propTypes.string.isRequired,
+    categoryData: propTypes.object.isRequired,
     projectId: propTypes.string.isRequired,
   }
 
@@ -34,14 +33,13 @@ const ProjectScores = class extends React.Component {
 
   state = {
     scores: undefined,
-    isJudgesPick: false,
     criteriaLoaded: false,
   }
 
   componentDidMount() {
     this.getProjectCriteria()
       .then((category) => {
-        this.category = this.props.category;
+        this.category = this.props.categoryData;
       })
       .then(() => {
         this.initScores();
@@ -53,7 +51,7 @@ const ProjectScores = class extends React.Component {
       this.setState({showDescription: true});
       this.getProjectCriteria()
         .then((category) => {
-          this.category = this.props.category;
+          this.category = this.props.categoryData;
         })
         .then(() => {
           this.initScores();
@@ -99,7 +97,6 @@ const ProjectScores = class extends React.Component {
 
           return {
             scores: loadedScores,
-            isJudgesPick: oldVotes.isJudgesPick,
           };
         }
 
@@ -109,9 +106,8 @@ const ProjectScores = class extends React.Component {
           return false;
         }
         let scores = loaded.scores;
-        let isJudgesPick = loaded.isJudgesPick
         let hasOldScores = true;
-        this.setState({ scores, isJudgesPick, hasOldScores }, () => {
+        this.setState({ scores, hasOldScores }, () => {
           console.log('loaded old scores')
           this.props.onScoreEvent('loadedOldVotes', { categoryId: this.props.categoryId });
         })
@@ -120,7 +116,7 @@ const ProjectScores = class extends React.Component {
   }
 
   castVotes = async () =>  {
-    return api.castVotes(this.props.projectId, this.props.categoryId, this.state.scores, this.state.isJudgesPick)
+    return api.castVotes(this.props.projectId, this.props.categoryId, this.state.scores)
       .then(() => {
         this.props.onScoreEvent('castedVote', { categoryId: this.props.categoryId });
       }).catch((err) => {
@@ -200,9 +196,6 @@ const ProjectScores = class extends React.Component {
       case 'blur':
         this.handleBlur(params.criterion);
         break;
-      case 'changePick':
-        this.setState({ isJudgesPick: params.e.target.checked });
-        break;
       default:
         break;
     }
@@ -224,16 +217,10 @@ const ProjectScores = class extends React.Component {
                 criterion={criterion}
                 scoreIn={this.state.scores[criterion.accessor]}
                 onInputEvent={this.onInputEvent}
-                // hasNext={ !(index === (this.votingCriteria.length - 1))}
                 hasNext={true}
               />
             )
           })}
-          <JudgesPick
-            isPicked={this.state.isJudgesPick}
-            onChange={(e) => this.onInputEvent('changePick', { e })}
-            hasNext={false}
-          />
         </div>
   
         <CastVotesButton
@@ -245,4 +232,4 @@ const ProjectScores = class extends React.Component {
   }
 }
 
-export default ProjectScores;
+export default CategoryScores;

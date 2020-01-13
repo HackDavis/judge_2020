@@ -12,12 +12,12 @@ const ProjectInfo = function({
       <ProjectHeader project={project} />
 
       <button
-        className="toggleDisplay__dp margin-1__dp button"
+        className="toggleDisplay__dp padding-1__dp button"
         onClick={onToggleDesc}
       >{(showDescription) ? "Switch to rubric" : "Switch to project info"}</button>
 
       <div className={
-        "project-description__dp margin-1__dp "
+        "project-description__dp padding-1__dp "
         + (showDescription ? "" : "is-hidden-mobile")
       }>
         <ProjectDescription

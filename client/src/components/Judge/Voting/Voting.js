@@ -133,44 +133,48 @@ class Voting extends React.Component {
     return currProjectId || queue[0];
   }
     
-  handleButtons = (val, props) =>  {
-    if (val === 'next') {
-      this.gotoNextProject();
-    } else if (val === 'jump') {
-      const newProjectId = props;
-      
-      this.setState(state => {
-        return {
-          currProjectId: newProjectId,
-          showingDescription: !state.showingDescription,
-          viewAll: false
-        }
-      });
-    } else if (val === 'view-all') {
-      this.updateVotingData()
-        .then(() => {
-          this.setState(state => {
-            return {
-              viewAll: !state.viewAll
-            }
-          });
-        })
-    } else if (val === 'toggleDesc') {
-      this.setState(state => {
-        return {
-          showingDescription: !state.showingDescription
-        }
-      });
-    }
-  }
-
-  handleParseError = (err) => {
-    switch (err.code) {
-      case Parse.Error.INVALID_SESSION_TOKEN:
-        Parse.User.logOut();
+  onVotingEvent = (val, props) =>  {
+    switch (val) {
+      case 'next': {
+        this.gotoNextProject();
         break;
+      }
+      case 'jump': {
+        const newProjectId = props;
+      
+        this.setState(state => {
+          return {
+            currProjectId: newProjectId,
+            showingDescription: !state.showingDescription,
+            viewAll: false
+          }
+        });
+        break;
+      }
+      case 'view-all': {
+        this.updateVotingData()
+          .then(() => {
+            this.setState(state => {
+              return {
+                viewAll: !state.viewAll
+              }
+            });
+          })
+        break;
+      }
+      case 'toggleDesc': {
+        this.setState(state => {
+          return {
+            showingDescription: !state.showingDescription
+          }
+        });
+        break;
+      }
+      case 'updateVotingData': {
+        return this.updateVotingData();
+        break;
+      }
       default:
-        console.log("Parse Error", err.code);
         break;
     }
   }
@@ -193,7 +197,7 @@ class Voting extends React.Component {
         <ViewAll
           currProjectId={this.state.currProjectId}
           projects={this.projects}
-          handleButtons={this.handleButtons}
+          onVotingEvent={this.onVotingEvent}
         />
       )
     }
@@ -201,9 +205,9 @@ class Voting extends React.Component {
     return (
       <DisplayProject
         progress={this.progress[this.state.currProjectId]}
-        categories={this.categories}
+        categoryData={this.categories}
         project={this.projects[this.state.currProjectId]}
-        handleButtons={this.handleButtons}
+        onVotingEvent={this.onVotingEvent}
         projectsLeftCount={this.state.projectsLeftCount}
       />
     )

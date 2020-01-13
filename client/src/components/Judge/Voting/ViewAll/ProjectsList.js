@@ -1,7 +1,7 @@
 import React from 'react';
 import './ProjectsList.css'
 
-export default function ProjectsList({currProjectId, projects, handleButtons}) {
+export default function ProjectsList({currProjectId, projects, onVotingEvent}) {
   return (
        <div className="container">
         {Object.values(projects).map(project => {
@@ -10,9 +10,9 @@ export default function ProjectsList({currProjectId, projects, handleButtons}) {
               <span className="project-name">
                 
                   { currProjectId === project.objectId? (
-                    <a href onClick={() => handleButtons('jump', project.objectId)}><b>{project.name} (Current)</b></a>
+                    <a href onClick={() => onVotingEvent('jump', project.objectId)}><b>{project.name} (Current)</b></a>
                   ) : (
-                    <a href onClick={() => handleButtons('jump', project.objectId)}>{project.name}</a>
+                    <a href onClick={() => onVotingEvent('jump', project.objectId)}>{project.name}</a>
                   )}
               </span>
               

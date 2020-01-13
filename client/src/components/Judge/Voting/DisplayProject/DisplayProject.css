@@ -1,7 +1,5 @@
-/* CSS GRID */
-
-.margin-1__dp {
-  margin: 0.5rem 0;
+.padding-1__dp {
+  padding: 0.5rem 0;
 }
 
 .main-container__dp {
@@ -10,6 +8,7 @@
   grid-gap: 1rem;
   padding: 1.5rem 2rem;
   width: 100vw;
+  flex: 1;
 }
 
 button.toggleDisplay__dp {
@@ -26,8 +25,29 @@ button.toggleDisplay__dp {
   grid-auto-rows: 4em;
 }
 
+.nav-container__dp {
+  width: 100%
+}
+
+.nav-desktop__dp {
+  display: none;
+}
+
+.nav-mobile__dp {
+  display: initial;
+}
+
 
 @media screen and (min-width: 1024px) {
+
+  .nav-desktop__dp {
+    display: initial;
+  }
+  
+  .nav-mobile__dp {
+    display: none;
+  }
+
   .main-container__dp {
     grid-template-columns: repeat(2, 1fr);
     grid-gap: 3rem;
@@ -74,8 +94,10 @@ button.toggleDisplay__dp {
     flex: auto;
   }
 
-  .voting-panel__dp > .rubric {
+  .rubric {
     flex: 1;
+    overflow-y: scroll;
+    height: 300px;
   }
 }
 

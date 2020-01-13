@@ -28,10 +28,10 @@ export default function ViewAll(props) {
       <ProjectsList
         currProjectId={props.currProjectId}
         projects={props.projects}
-        handleButtons={props.handleButtons}
+        onVotingEvent={props.onVotingEvent}
       />
       <Nav
-        handleViewAll={() => props.handleButtons('view-all')}
+        handleViewAll={() => props.onVotingEvent('view-all')}
       />
     </section>   
   )
