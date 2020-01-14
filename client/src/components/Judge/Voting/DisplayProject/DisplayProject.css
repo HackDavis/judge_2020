@@ -152,6 +152,14 @@ button.toggleDisplay__dp {
     overflow-y: hidden;
     min-height: 0;
     transition: padding-right 0.2s linear;
+    background:
+      linear-gradient(white 10%, hsla(0,0%,100%, 0)),
+      linear-gradient(hsla(0,0%,100%,0) 10px, white 50%) bottom,
+      radial-gradient(at top, rgba(0,0,0,0.2), transparent 50%), 
+      radial-gradient(at bottom, rgba(0,0,0,0.2), transparent 50%) bottom;
+    background-repeat:no-repeat;
+    background-size: 100% 20px, 100% 20px, 100% 10px, 100% 10px;
+    background-attachment:local, local, scroll, scroll;
   }
   
   .rubric:hover {
