@@ -18,20 +18,26 @@ function Nav({ handleViewAll }) {
   )
 }
 
-export default function ViewAll(props) {
+export default function ViewAll({
+  currProjectId,
+  projects,
+  onVotingEvent,
+  progress
+}) {
   useEffect(() => {
-    console.log(props.projects)
-  }, [props.projects])
+    console.log(projects)
+  }, [projects])
 
   return (
     <section className="section voting-container">
       <ProjectsList
-        currProjectId={props.currProjectId}
-        projects={props.projects}
-        onVotingEvent={props.onVotingEvent}
+        currProjectId={currProjectId}
+        progress={progress}
+        projects={projects}
+        onVotingEvent={onVotingEvent}
       />
       <Nav
-        handleViewAll={() => props.onVotingEvent('view-all')}
+        handleViewAll={() => onVotingEvent('view-all')}
       />
     </section>   
   )

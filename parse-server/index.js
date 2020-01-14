@@ -19,13 +19,12 @@ const DO_DB_INIT = process.argv.includes('initdb');
 
 const api = new ParseServer({
   databaseURI: process.env.MONGODB_URL, // Connection string for your MongoDB database
-  // cloud: './build/cloud.bundle.js', // Absolute path to your Cloud Code
   cloud: './cloud/main.js', // Absolute path to your Cloud Code
   appId: APP_ID,
   masterKey: MASTER_KEY, 
   serverURL: SERVER_URL,
   publicServerURL: PUBLIC_SERVER_URL,
-  allowClientClassCreation: true,
+  allowClientClassCreation: false,
 });
 
 const dashboard = new ParseDashboard({

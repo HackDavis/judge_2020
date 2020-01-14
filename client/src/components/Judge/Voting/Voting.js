@@ -194,6 +194,7 @@ class Voting extends React.Component {
       return (
         <ViewAll
           currProjectId={this.state.currProjectId}
+          progress={this.progress}
           projects={this.projects}
           onVotingEvent={this.onVotingEvent}
         />
