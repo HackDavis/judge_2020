@@ -69,11 +69,20 @@ button.toggleDisplay__dp {
   white-space: nowrap;
   overflow-x: hidden;
   display: block !important;
+  transition: padding-right 0.2s linear;
+}
+
+.tabs a:hover {
+
 }
 
 @media screen and (max-width: 1023px) {
   .is-hidden-small {
     display: none;
+  }
+
+  .main-container__dp {
+    padding: 1rem 2rem;
   }
 }
 

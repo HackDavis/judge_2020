@@ -7,14 +7,13 @@ function Nav ({onVotingEvent, hasNext}) {
     console.log(hasNext)
   }, [hasNext])
   return (
-    <div className="nav__dp container short-container no-padding-bottom">
+    <div className="nav__dp">
       <div className="columns is-mobile">
         <div className="column is-half">
           <a href
             className="button is-fullwidth is-primary is-outlined"
             onClick={() => onVotingEvent('view-all')}
           >View all projects</a>
-          {/* todo: toggle text of this button ^ */}
         </div>
           <div className="column is-half">
             { hasNext ? (
