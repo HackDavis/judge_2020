@@ -89,7 +89,10 @@ export default class Criteria extends React.Component {
             <div>
               <MTableToolbar {...props} />
               <div style={{padding: '0px 10px'}}>
-                <CategoryDropdown onSelect={this.onSelect}/>
+                <CategoryDropdown
+                  onSelect={this.onSelect}
+                  selected={this.state.categoryId}
+                />
               </div>
             </div>
           ),

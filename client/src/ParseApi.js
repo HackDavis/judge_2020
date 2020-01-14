@@ -79,6 +79,14 @@ export default class ParseApi {
 
   /**
    * 
+   * @param {string} categoryId Gets criteria for category, including general criteria
+   */
+  static async getVotingCriteria(categoryId) {
+    return Parse.Cloud.run('getVotingCriteria', {categoryId});
+  }
+
+  /**
+   * 
    * @param {*} name Display name
    * @param {string} accessor ID that is unique amongst all criteria
    * @param {string} description 

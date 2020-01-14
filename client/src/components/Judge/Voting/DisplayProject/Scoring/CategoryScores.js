@@ -60,7 +60,7 @@ const CategoryScores = class extends React.Component {
   }
 
   getProjectCriteria = async () => {
-    return api.getCriteria()
+    return api.getVotingCriteria(this.props.categoryId)
       .then((criteria) => {
         this.votingCriteria = criteria;
         this.setState({criteriaLoaded: true})
@@ -131,7 +131,7 @@ const CategoryScores = class extends React.Component {
       const newScores = state.scores;
       if (score === '') {
         newScores[criterion.accessor] = '';
-      } else if (this.isNumber(score)) {
+      } else if (!isNaN(score)) {
         newScores[criterion.accessor] = parseInt(score);
       }
 

@@ -5,25 +5,34 @@ import api from '../../ParseApi';
 export default class CategoryDropdown extends React.Component {
   state = {
     active: false,
-    selected: null,
     loadedCategories: undefined,
   }
 
   static propTypes = {
-    onSelect: propTypes.func.isRequired
+    onSelect: propTypes.func.isRequired,
+    selected: propTypes.string
   }
 
-  categories = [];
+  categories = {};
 
   componentDidMount() {
-    api.getAllCategories(true)
+    
+    
+  }
+
+  componentDidUpdate() {
+    this.loadCategories();
+  }
+
+  loadCategories = () => {
+    return api.getAllCategories(true)
       .then((categories) => {
         this.categories = categories.reduce((aggr, category) => {
           aggr[category.objectId] = category;
           return aggr;
         }, {})
-        
-        console.log(this.categories)
+
+        this.setState({loadedCategories: true})
       })
   }
 
@@ -33,17 +42,37 @@ export default class CategoryDropdown extends React.Component {
     })
   }
 
+  getCategoryName(catId) {
+    console.log(catId);
+    console.log(this.categories);
+    return this.categories[catId].name;
+  }
+
   onSelect = (catId) => {
     this.props.onSelect(catId);
-    this.setState({selected: catId});
   }
 
   render() {
+    if (!this.state.loadedCategories) {
+      return (
+        <div className="dropdown">
+          <div className="dropdown-trigger">
+            <button className="button" aria-haspopup="true" aria-controls="dropdown-menu">
+              <span>...</span>
+              <span className="icon is-small">
+                <i className="fas fa-angle-down" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className={`dropdown ${(this.state.active ? "is-active" : "")}`}>
         <div className="dropdown-trigger">
           <button className="button" aria-haspopup="true" aria-controls="dropdown-menu" onClick={this.toggleActive}>
-            <span>{this.state.selected ? this.categories[this.state.selected] : "General"}</span>
+            <span>{this.props.selected === null ? "General" : (this.getCategoryName(this.props.selected))}</span>
             <span className="icon is-small">
               <i className="fas fa-angle-down" aria-hidden="true"></i>
             </span>
@@ -52,7 +81,7 @@ export default class CategoryDropdown extends React.Component {
         <div key={this.state.loadedCategories} className="dropdown-menu" id="dropdown-menu" role="menu">
           <div className="dropdown-content">
             <a href
-              className={`dropdown-item ${((this.state.selected === null) ? "is-active" : "")}`}
+              className={`dropdown-item ${((this.props.selected === null) ? "is-active" : "")}`}
               onClick={() => this.onSelect(null)}
             >
               General
@@ -60,7 +89,7 @@ export default class CategoryDropdown extends React.Component {
             <hr className="dropdown-divider"/>
             { Object.values(this.categories).map((category) => 
               <a href key={category.objectId} className="dropdown-item"
-                className={`dropdown-item ${((this.state.selected === category.objectId) ? "is-active" : "")}`}
+                className={`dropdown-item ${((this.props.selected === category.objectId) ? "is-active" : "")}`}
                 onClick={() => this.onSelect(category.objectId)}
               >
                 {category.name}

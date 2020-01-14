@@ -26,6 +26,7 @@ let cloudFuncs = {
   'createCriterion': onCreateCriterion,
   'updateCriteria': updateCriteria,
   'deleteCriteria': deleteCriteria,
+  'getVotingCriteria': onGetVotingCriteria,
 
   'getCategoriesOfJudge': onGetCategoriesOfJudge,
   'getAllCategories': getAllCategories,
@@ -177,6 +178,31 @@ function onGetCriteria(request) {
         let json = criterion.toJSON();
         return json;
       }))
+    .catch(err => console.log(err));
+}
+
+function onGetVotingCriteria(request) {
+  const {categoryId} = request.params;
+
+  const generalQuery = new Parse.Query(JudgingCriteria);
+  generalQuery.equalTo("isGeneral", true);
+  generalQuery.ascending("order");
+  generalQuery.limit(1000);
+
+  const specificQuery = new Parse.Query(JudgingCriteria);
+  specificQuery.equalTo("isGeneral", false);
+  let ptr = new Category();
+  ptr.id = categoryId;
+  specificQuery.equalTo("category", ptr);
+  specificQuery.ascending("order");
+  specificQuery.limit(1000);
+
+  var mainQuery = Parse.Query.or(generalQuery, specificQuery);
+  return mainQuery.find(useMasterKey)
+    .then(criteria => criteria.map((criterion) => {
+      let json = criterion.toJSON();
+      return json;
+    }))
     .catch(err => console.log(err));
 }
 
