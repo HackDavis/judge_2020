@@ -7,7 +7,7 @@ import api from '../../../../../ParseApi'
 
 const CastVotesButton = function({castVotes}) {
   return (
-    <div className="container">
+    <div className="cast-votes">
       <div className="buttons">
         <a href className="button is-fullwidth is-primary" 
           onClick={castVotes}

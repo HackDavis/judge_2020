@@ -16,14 +16,14 @@ const Scoring = function({
 
   const Tabs = categoryIds.map( (categoryId, index) => 
     <li key={categoryId} className={((currCategoryId === categoryId) ? "is-active" : "")}>
-      <a onClick={() => onScoreEvent('changeCategory', {categoryId})}>Rubric {index+1}</a>
+      <a onClick={() => onScoreEvent('changeCategory', {categoryId})}>{categoryData[categoryId].name}</a>
     </li>
   );
 
   const Rubrics = categoryIds.map( (categoryId) => 
     <div
       key={categoryId}
-      className={(currCategoryId === categoryId ? "" : "hidden")}
+      className={"category-score " + (currCategoryId === categoryId ? "" : "hidden")}
     >
       <CategoryScores
         onScoreEvent={onScoreEvent}
@@ -37,9 +37,11 @@ const Scoring = function({
   return (
     <div key={currCategoryId} className={ "vote-scores " + (showDescription ? "is-hidden-small" : "") }>
 
-      <div class="tabs">
-        <ul>{Tabs}</ul>
-      </div>
+      { (categoryIds.length > 1) &&
+        <div class="tabs">
+          <ul>{Tabs}</ul>
+        </div>
+      }
 
       {Rubrics}
 
