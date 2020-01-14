@@ -91,6 +91,7 @@ button.toggleDisplay__dp {
 
   .project-description__dp {
     flex: 1;
+    height: 0;
   }
 
   .project-description__dp > .control{
