@@ -25,7 +25,7 @@
   display: grid;
   grid-template-columns: 1fr;
   grid-gap: 1rem;
-  padding: 1.5rem 2rem;
+  padding: 1rem 1rem;
   width: 100vw;
   flex: 1;
 }
@@ -69,20 +69,11 @@ button.toggleDisplay__dp {
   white-space: nowrap;
   overflow-x: hidden;
   display: block !important;
-  transition: padding-right 0.2s linear;
-}
-
-.tabs a:hover {
-
 }
 
 @media screen and (max-width: 1023px) {
   .is-hidden-small {
     display: none;
-  }
-
-  .main-container__dp {
-    padding: 1rem 2rem;
   }
 }
 
@@ -99,6 +90,7 @@ button.toggleDisplay__dp {
 
   .main-container__dp {
     grid-template-columns: repeat(2, 1fr);
+    padding: 1.5rem 2rem;
     grid-gap: 3rem;
     height: 100%;
   }
