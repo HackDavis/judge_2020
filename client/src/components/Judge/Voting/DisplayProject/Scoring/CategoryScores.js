@@ -60,7 +60,7 @@ const CategoryScores = class extends React.Component {
   }
 
   getProjectCriteria = async () => {
-    return api.getGeneralCriteria()
+    return api.getCriteria()
       .then((criteria) => {
         this.votingCriteria = criteria;
         this.setState({criteriaLoaded: true})

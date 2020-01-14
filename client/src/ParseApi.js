@@ -41,10 +41,6 @@ export default class ParseApi {
     return Parse.Cloud.run('createVoteQueue');
   }
 
-  static getCompletionStatus(allProjects, projects, judgeId) {
-    return Parse.Cloud.run('getCompletionStatus', { allProjects, projects, judgeId });
-  }
-
   static castVotes(projectId, categoryId, scores, isJudgesPick) {
     console.log(isJudgesPick)
     const time = Date.now();
@@ -73,12 +69,25 @@ export default class ParseApi {
     return { projects, count: doneCount };
   }
 
-  static async getGeneralCriteria() {
-    return Parse.Cloud.run('getGeneralCriteria');
+  /**
+   * 
+   * @param {string} categoryId Leave undefined for general criteria
+   */
+  static async getCriteria(categoryId) {
+    return Parse.Cloud.run('getCriteria', {categoryId});
   }
 
-  static async addGeneralCriteria(name, accessor, description, order, maxScore) {
-    return Parse.Cloud.run('addGeneralCriteria', {name, accessor, description, order, maxScore});
+  /**
+   * 
+   * @param {*} name Display name
+   * @param {string} accessor ID that is unique amongst all criteria
+   * @param {string} description 
+   * @param {number} order 
+   * @param {number} maxScore 
+   * @param {string} categoryId Leave blank for general criteria
+   */
+  static async createCriterion(name, accessor, description, order, maxScore, categoryId) {
+    return Parse.Cloud.run('createCriterion', {name, accessor, description, order, maxScore, categoryId});
   }
 
   static async deleteCriteria(objectId) {
@@ -102,8 +111,12 @@ export default class ParseApi {
     return Parse.Cloud.run('updateUser', {userId, updateData}); // todo: implement
   }
 
-  static async getAllCategories() {
-    return Parse.Cloud.run('getAllCategories');
+  /**
+   * 
+   * @param {boolean} toJSON Convert to JSON before retrieval
+   */
+  static async getAllCategories(toJSON) {
+    return Parse.Cloud.run('getAllCategories', { toJSON });
   }
 
   /**
@@ -121,11 +134,11 @@ export default class ParseApi {
    * @param {Array<string>} categories Array of category objectIds strings
    */
   static async setCategoriesOfJudge(judgeId, categories) {
-    return Parse.Cloud.run('setCategoriesOfJudge', {judgeId, categories}); // todo: implement
+    return Parse.Cloud.run('setCategoriesOfJudge', {judgeId, categories});
   }
 
   static async getCategory(categoryId) {
-    return Parse.Cloud.run('getCategory', { categoryId }); // todo: implement
+    return Parse.Cloud.run('getCategory', { categoryId });
   }
 
   static async getCategoryCriteria(categoryId) {

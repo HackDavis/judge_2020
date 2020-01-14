@@ -22,8 +22,6 @@ export default class Login extends React.Component {
 
   componentDidMount() {
     if(Parse.User.current()) {
-      Parse.Cloud.run('getVoteQueue')
-        .then(result => console.log)
       Parse.Cloud.run('isAdmin')
         .then(isAdmin => {
           console.log(isAdmin);

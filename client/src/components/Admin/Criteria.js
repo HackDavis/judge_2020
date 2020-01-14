@@ -1,7 +1,9 @@
 import React from 'react'
 // import PropTypes from 'prop-types'
-import MaterialTable from 'material-table'
 import api from '../../ParseApi'
+import MaterialTable, { MTableToolbar } from 'material-table'
+
+import CategoryDropdown from './CategoryDropdown'
 
 export default class Criteria extends React.Component {
   editFuncs = {
@@ -11,7 +13,7 @@ export default class Criteria extends React.Component {
       new Promise((resolve, reject) => {
         console.log(newData);
         let {name, accessor, maxScore, description, order} = newData;
-        api.addGeneralCriteria(name, accessor, description, order, maxScore)
+        api.createCriterion(name, accessor, description, order, maxScore, this.state.categoryId)
           .then(() => resolve())
           .catch((err) => {
             let errMsg = `Error: Failed to add new criterion. ${err}`;
@@ -40,35 +42,60 @@ export default class Criteria extends React.Component {
     onRowDelete: oldData => api.deleteCriteria(oldData.objectId),
   }
 
+  state = {
+    categoryId: null,
+  }
+
+  tableRef = React.createRef();
+
   componentDidMount() {
-    api.getGeneralCriteria()
+    api.getCriteria()
       .then((criteria) => {
         console.log(criteria)
       })
   }
 
+  getCriteria = () => {
+    return api.getCriteria(this.state.categoryId)
+      .then((criteria) => {
+        
+        let ret = criteria.map((item) => {
+          return {
+            order: item.order,
+            name: item.name,
+            description: item.description,
+            maxScore: item.maxScore,
+          }
+        })
+        
+        return { data: ret }
+      })
+  }
+
+  onSelect = (categoryId) => {
+    this.setState({categoryId}, () => {
+      if (this.tableRef.current) {
+        this.tableRef.current.onQueryChange();
+      }
+    })
+  }
+
   render() {
     return (
       <MaterialTable
+        tableRef={this.tableRef}
+        components={{
+          Toolbar: props => (
+            <div>
+              <MTableToolbar {...props} />
+              <div style={{padding: '0px 10px'}}>
+                <CategoryDropdown onSelect={this.onSelect}/>
+              </div>
+            </div>
+          ),
+        }}
         title='Judging Criteria'
-        data={query =>
-          new Promise((resolve, reject) => {
-            api.getGeneralCriteria()
-              .then((criteria) => {
-                
-                let ret = criteria.map((item) => {
-                  return {
-                    order: item.order,
-                    name: item.name,
-                    description: item.description,
-                    maxScore: item.maxScore,
-                  }
-                })
-                
-                resolve({ data: ret })
-              })
-          })
-        }
+        data={this.getCriteria}
         columns={[
           { title: 'Order', field: 'order', type: 'numeric' },
           { title: 'Name', field: 'name' },
@@ -79,6 +106,7 @@ export default class Criteria extends React.Component {
         options={{
           paging: false,
           sorting: false,
+          search: false,
         }}
         editable={this.editFuncs}
       />

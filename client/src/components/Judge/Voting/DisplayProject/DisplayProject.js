@@ -130,7 +130,7 @@ export default class DisplayProject extends React.Component {
     }
 
     return (
-      <React.Fragment>
+      <div className="main-container">
 
         { (this.props.projectsLeftCount === 0 || this.state.isProjectDone) &&  
           <CompleteBanner
@@ -187,8 +187,8 @@ export default class DisplayProject extends React.Component {
 
   
         </div>
-        
-      </React.Fragment>
+
+      </div>
     );
   }
 }

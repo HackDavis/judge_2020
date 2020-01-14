@@ -27,6 +27,6 @@ module.exports = class Judge {
     });
     judgeToCategory.set('categories', pointers);
     
-    return judgeToCategory.save(useMasterKey);
+    return judgeToCategory.save(null, useMasterKey);
   }
 }

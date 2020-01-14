@@ -60,8 +60,6 @@ class Voting extends React.Component {
     if (nextProjectId === this.state.currProjectId) {
       if (this.state.projectsLeftCount === 0) {
         this.setState({ sendToCompletionPage: true });
-      } else {
-        // todo: prompt that no other projects need voting on
       }
 
       return;

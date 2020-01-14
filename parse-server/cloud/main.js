@@ -16,22 +16,20 @@ let cloudFuncs = {
   'getVoteQueue': onGetVoteQueue,
   'saveVotes': onSaveVotes,
   'getVotes': onGetVotes,
-  'getCompletionStatus': onGetCompletionStatus,
   'getJudgesPick': onGetJudgesPick,
 
   'getProjects': onGetProjects,
   'getAllProjects': getAllProjects,
   'getProject': onGetProject,
 
-  'getGeneralCriteria': getGeneralCriteria,
-  'addGeneralCriteria': addGeneralCriteria,
+  'getCriteria': onGetCriteria,
+  'createCriterion': onCreateCriterion,
   'updateCriteria': updateCriteria,
   'deleteCriteria': deleteCriteria,
 
   'getCategoriesOfJudge': onGetCategoriesOfJudge,
   'getAllCategories': getAllCategories,
   'getCategory': onGetCategory,
-  'setCategoriesOfJudge': setCategoriesOfJudgeHandler,
   'setCategoriesOfJudge': JudgeHandler.onSetCategoriesOfJudge,
 }
 
@@ -105,13 +103,6 @@ async function parseCsv(csv) {
             reject(`Couldn\'t save projects. Err: ${err}`);
             return;
           });
-
-        // Parse.Object.saveAll(categories, useMasterKey)
-        //   .then(() => resolve('Uploaded.'))
-        //   .catch(err => {
-        //     reject('Couldn\'t save categories');
-        //     return;
-        //   });
       }
     );
   });
@@ -168,18 +159,24 @@ async function updateUserHandler(request) {
  * Criteria
  */
 
-async function getGeneralCriteria() {
+function onGetCriteria(request) {
+  const {categoryId} = request.params;
   const query = new Parse.Query(JudgingCriteria);
-  query.equalTo("isGeneral", true);
+  if (categoryId) {
+    query.equalTo("isGeneral", false);
+    let ptr = new Category();
+    ptr.id = categoryId;
+    query.equalTo("category", ptr);
+  } else {
+    query.equalTo("isGeneral", true);
+  }
+  query.ascending("order");
   query.limit(1000);
   return query.find(useMasterKey)
-    .then(criteria => {
-      criteria = criteria.map((criterion) => {
+    .then(criteria => criteria.map((criterion) => {
         let json = criterion.toJSON();
         return json;
-      });
-      return criteria;
-    })
+      }))
     .catch(err => console.log(err));
 }
 
@@ -199,13 +196,15 @@ async function doesCriteriaAccessorExist(accessor, idIgnore) {
   return true;
 }
 
-async function doesCriteriaOrderNumExist(order, category, idIgnore) {
-  let isGeneral = (category === undefined)
+async function doesCriteriaOrderNumExist(order, categoryId, idIgnore) {
+  let isGeneral = (categoryId === undefined)
   const query = new Parse.Query(JudgingCriteria);
   query.equalTo("order", Number(order));
   query.equalTo("isGeneral", isGeneral);
   if (!isGeneral) {
-    query.equalTo("category", category);
+    let ptr = new Category();
+    ptr.id = categoryId;
+    query.equalTo("category", ptr);
   }
   const results = await query.find();
 
@@ -220,8 +219,8 @@ async function doesCriteriaOrderNumExist(order, category, idIgnore) {
   return true;
 }
 
-async function validateCriteriaInput(params, category, objectId) {
-  let {name, order, accessor, maxScore} = params;
+async function validateCriteriaInput(params, objectId) {
+  let {name, order, accessor, maxScore, categoryId} = params;
 
   if (isStringEmpty(name)) {
     throw new Error("Name can't be empty");
@@ -240,7 +239,7 @@ async function validateCriteriaInput(params, category, objectId) {
   }
 
   // todo: doesn't seem to work
-  if (await doesCriteriaOrderNumExist(order, category, objectId)) {
+  if (await doesCriteriaOrderNumExist(order, categoryId, objectId)) {
     throw new Error("Criterion with provided order number exists");
   }
 
@@ -248,8 +247,8 @@ async function validateCriteriaInput(params, category, objectId) {
     throw new Error("MaxScore must be a number");
   }
 
-  if (category !== undefined) {
-    if (isStringEmpty(category)) {
+  if (categoryId !== undefined) {
+    if (isStringEmpty(categoryId)) {
       throw new Error("Category can't be empty");
     }
   }
@@ -257,14 +256,14 @@ async function validateCriteriaInput(params, category, objectId) {
   return true;
 }
 
-async function addGeneralCriteria(request) {
+async function onCreateCriterion(request) {
   if (!await UserHandler.isAdmin(request.user)) {
     throw new Error('Not admin');
   }
 
   let criterion = new JudgingCriteria();
 
-  let {name, description, order, accessor, maxScore} = request.params;
+  let {name, description, order, accessor, maxScore, categoryId} = request.params;
 
   try {
     await validateCriteriaInput(request.params);
@@ -277,12 +276,15 @@ async function addGeneralCriteria(request) {
   criterion.set("order", Number(order));
   criterion.set("accessor", accessor);
   criterion.set("maxScore", Number(maxScore));
-  criterion.set("isGeneral", true);
+  if (categoryId === undefined) {
+    criterion.set("isGeneral", true);
+  } else {
+    let ptr = new Category();
+    ptr.id = categoryId;
+    criterion.set("isGeneral", false);
+    criterion.set("category", ptr);
+  }
   return criterion.save(null, useMasterKey);
-}
-
-async function addCustomCriteria(custom) {
-
 }
 
 async function deleteCriteria(request) {
@@ -301,7 +303,7 @@ async function updateCriteria(request) {
   }
 
   try {
-    await validateCriteriaInput(request.params.update, undefined, request.params.objectId);
+    await validateCriteriaInput(request.params.update, request.params.objectId);
   } catch (err) {
     throw err;
   }
@@ -309,13 +311,20 @@ async function updateCriteria(request) {
   return new Parse.Query(JudgingCriteria)
     .get(request.params.objectId, useMasterKey)
     .then((obj) => {
-      let {name, description, order, accessor, maxScore} = request.params.update;
+      let {name, description, order, accessor, maxScore, categoryId} = request.params.update;
       obj.set("name", name);
       obj.set("description", description);
       obj.set("order", Number(order));
       obj.set("accessor", accessor);
       obj.set("maxScore", Number(maxScore));
-      obj.set("isGeneral", true);
+      if (categoryId === undefined) {
+        obj.set("isGeneral", true);
+      } else {
+        let ptr = new Category();
+        ptr.id = categoryId;
+        obj.set("isGeneral", false);
+        obj.set("category", ptr);
+      }
       obj.save();
     });
 }
@@ -476,67 +485,6 @@ async function onGetVotingData(request) {
   if (expand) {
     resp.projects = projectData;
     resp.categories = categoryData;
-  }
-
-  return resp;
-}
-
-async function onGetCompletionStatus(request) {
-  let { judgeId, allProjects, projects } = request.params;
-
-  let judge;
-  if (judgeId) {
-    if (!await UserHandler.isAdmin(request.user)) {
-      throw new Error('Must be admin to query specific judge\'s votes');
-    }
-
-    let query = new Parse.Query(User);
-    judge = await query.get(judgeId);
-  } else {
-    judge = request.user;
-  }
-
-  if (allProjects) {
-    projects = await getVoteQueue(judge);
-  }
-
-  let userCategoryIds = await getCategoryIdsOfJudge(judge);
-  let numComplete = 0;
-  let numPending = 0;
-  
-  let projectsStatus = {};
-  for (projectId of projects) {
-    let projectCategoryIds = await getCategoryIdsOfProject(projectId);
-    let categoryIds = [];
-    for (id of projectCategoryIds) {
-      if (userCategoryIds.includes(id)) {
-        categoryIds.push(id);
-      }
-    }
-    let categoriesPending = 0;
-
-    for (categoryId of categoryIds) {
-      let vote = await getProjectVotes(judge, projectId, categoryId);
-      if (vote === null) {
-       categoriesPending++; 
-      }
-    }
-    
-    let projectComplete = (0 === categoriesPending);
-    if (projectComplete) {
-      numComplete++;
-    } else {
-      numPending++;
-    }
-
-    projectsStatus[projectId] = projectComplete;
-  }
-
-  let resp = {
-    numProjects: projects.length,
-    numComplete,
-    numPending,
-    projectCompletions: projectsStatus,
   }
 
   return resp;
@@ -778,8 +726,15 @@ async function getAllCategories(request) {
     throw new Error('Not admin');
   }
 
+  const { toJSON } = request.params;
+
   let query = new Parse.Query(Category);
   query.limit(1000);
+
+  if (toJSON) {
+    return query.find(useMasterKey)
+      .then((res) => res.map((obj) => obj.toJSON()));
+  }
 
   return query.find(useMasterKey);
 }
@@ -838,8 +793,4 @@ async function doesCategoryExist(name, idIgnore) {
   }
 
   return true;
-}
-
-async function setCategoriesOfJudgeHandler(request) {
-
 }
