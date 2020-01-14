@@ -25,7 +25,6 @@ code {
 @media screen and (min-width: 1024px) {
   .main-container {
     height: calc(100vh - 3.25rem);
-    overflow-y: hidden;
   } 
 }
 

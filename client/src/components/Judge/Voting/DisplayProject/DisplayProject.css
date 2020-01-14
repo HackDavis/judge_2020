@@ -2,6 +2,15 @@
   padding: 0.5rem 0;
 }
 
+.hidden {
+  display: none;
+}
+
+.notif {
+  background-color: #f5f5f5;
+  padding: 1.25rem 2.5rem 1.25rem 1.5rem;
+}
+
 .main-container__dp {
   display: grid;
   grid-template-columns: 1fr;
@@ -17,7 +26,7 @@ button.toggleDisplay__dp {
 }
 
 .main-panel__dp {
-  grid-column-start: 1 / 2;
+  grid-column: 1 / 2;
 }
 
 .rubric {
@@ -38,6 +47,10 @@ button.toggleDisplay__dp {
   display: initial;
 }
 
+.rubric-title {
+  text-align: center;
+}
+
 @media screen and (max-width: 1023px) {
   .is-hidden-small {
     display: none;
@@ -56,7 +69,7 @@ button.toggleDisplay__dp {
   }
 
   .main-container__dp {
-    grid-template-columns: repeat(2, 1fr);
+    /* grid-template-columns: repeat(2, 1fr); */
     grid-gap: 3rem;
     height: 100%;
   }
@@ -72,8 +85,7 @@ button.toggleDisplay__dp {
   .info-panel__dp.main-panel__dp {
     display: flex;
     flex-direction: column;
-    grid-column-start: 1 / 2;
-    height: 1fr;
+    grid-column: 1 / 2;
     overflow:hidden;
   }
 
@@ -90,7 +102,7 @@ button.toggleDisplay__dp {
   }
 
   .voting-panel__dp.main-panel__dp {
-    grid-column-start: 2 / 3;
+    grid-column: 2 / 3;
     height: 1fr;
     overflow: hidden;
     display: flex;

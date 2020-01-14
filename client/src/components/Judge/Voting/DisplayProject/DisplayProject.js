@@ -116,6 +116,9 @@ export default class DisplayProject extends React.Component {
             this.updateProgress();
           })
         break;
+      case 'changeCategory':
+        this.setState({currCategoryId: categoryId});
+        break;
       default:
         break;
     }
@@ -179,7 +182,7 @@ export default class DisplayProject extends React.Component {
                   }
                 />
               </div>
-              
+
             </div>
 
   

@@ -40,7 +40,7 @@ const IncrementalInput = function ({
             onFocus={ handleFocus }
             onBlur = { handleBlur }
             value={ score }
-          />
+          ></input>
           <a href className="increment-input-button is-primary" onClick={() => incremental(1)}>
             &#65291;
           </a>

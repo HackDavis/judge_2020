@@ -208,7 +208,7 @@ const CategoryScores = class extends React.Component {
   
     return (
       <React.Fragment>
-        <h3 className="title is-4 is-marginless">{this.category.name}</h3>
+        <h3 className="title is-4 is-marginless rubric-title">{this.category.name}</h3>
         <div className="rubric">
           { this.votingCriteria.map((criterion, index) => {
             return (

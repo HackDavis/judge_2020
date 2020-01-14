@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function CompleteBanner({ isAllDone }) {
   return (
-    <div className="notification is-marginless">
+    <div className="notif">
       { isAllDone ? (
         <>
           <i className="far fa-grin-beam"></i>
