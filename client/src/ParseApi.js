@@ -7,6 +7,30 @@ export default class ParseApi {
 
   /**
    * 
+   * @param {*} csv URI encoded file contents
+   */
+  static uploadProjects(csv) {
+    return Parse.Cloud.run('uploadProjects',{ csv });
+  }
+
+  static isVotingOpen() {
+    return Parse.Cloud.run('isVotingOpen');
+  }
+
+  static setAllowVoting(doOpen) {
+    return Parse.Cloud.run('setAllowVoting', { doOpen });
+  }
+
+  static getQueueCreateStatus() {
+    return Parse.Cloud.run('getQueueCreateStatus');
+  }
+
+  static createAllQueues() {
+    return Parse.Cloud.run('createAllQueues');
+  }
+
+  /**
+   * 
    * @param {boolean} expand Expand project and category data
    */
   static getVotingData(expand) {
@@ -42,7 +66,6 @@ export default class ParseApi {
   }
 
   static castVotes(projectId, categoryId, scores, isJudgesPick) {
-    console.log(isJudgesPick)
     const time = Date.now();
     const projectObjId = projectId;
     const toSync = Object.keys(scores)

@@ -31,7 +31,8 @@ export default class Criteria extends React.Component {
           maxScore: newData.maxScore,
           isGeneral: newData.isGeneral,
         }
-        api.updateCriteria(newData.objectId, update)
+        
+        return api.updateCriteria(newData.objectId, update)
           .then(() => resolve())
           .catch((err) => {
             let errMsg = `Error: Failed to update criterion. ${err}`;

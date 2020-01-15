@@ -46,7 +46,13 @@ export default class Judges extends React.Component {
           }
         });
 
-        return api.setCategoriesOfJudge(newData.objectId, categories);
+        return api.setCategoriesOfJudge(newData.objectId, categories)
+          .then(() => resolve())
+          .catch((err) => {
+            console.error(err);
+            alert('Failed to set categories of judge')
+            reject();
+          })
     }),
     onRowDelete: oldData => api.deleteCriteria(oldData.objectId),
   }

@@ -7,9 +7,6 @@ const RubricRow = function ({
   InputElement,
   hasNext,
 }) {
-  useEffect(() => {
-    console.log(InputElement)
-  }, [InputElement])
   return (
     // <div className={"vote-row" + (hasNext ? ' vote-row-border' : '')}>
     <React.Fragment>

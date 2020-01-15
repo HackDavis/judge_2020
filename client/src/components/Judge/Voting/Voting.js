@@ -16,6 +16,7 @@ class Voting extends React.Component {
   projects;
   categories;
   progress;
+  _isMounted;
   
   state = {
     currProjectId: undefined,
@@ -26,17 +27,25 @@ class Voting extends React.Component {
   };
   
   componentDidMount() {
+
     // TODO: check if voting open
     this.getProjects()
       .then(() => this.findNextProject())
       .then((nextProjectId) => {
+        
+        if (nextProjectId === null) {
+          this.setState({ sendToCompletionPage: true });
+          return;
+        }
+
         this.setState({
           currProjectId: nextProjectId,
         })
+        
 
       });
   }
-    
+
   getProjects = () => {
     return api.getVotingData(true)
       .then( (votingData) => {
@@ -57,6 +66,11 @@ class Voting extends React.Component {
 
   gotoNextProject = async () => {
     const nextProjectId = await this.findNextProject();
+
+    if (nextProjectId === null) { // none in queue
+      this.setState({ sendToCompletionPage: true });
+    }
+
     if (nextProjectId === this.state.currProjectId) {
       if (this.state.projectsLeftCount === 0) {
         this.setState({ sendToCompletionPage: true });
@@ -89,8 +103,7 @@ class Voting extends React.Component {
 
     let queue = await api.getVoteQueue();
     if (!queue || queue.length === 0) {
-      queue = await api.createVoteQueue();
-      console.log(queue);
+      return null;
     }
 
     const currProjectId = this.state.currProjectId;

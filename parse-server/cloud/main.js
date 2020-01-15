@@ -1,17 +1,29 @@
 const UserHandler = require('./User')
 const JudgeHandler = require('./Judge')
+const { saveWithMaster } = require('./util');
 
-const {useMasterKey, User, Project, Category, Vote, Queue, JudgingCriteria, JudgeToCategory} = require('./common');
+const {useMasterKey, User, Project, Category, Vote, Queue, JudgingCriteria, JudgeToCategory, Global} = require('./common');
 
 const csvParse = require('csv-parse');
 
+const initGlobalSettings = {
+  isVotingOpen: false,
+  isQueuesCreated: false,
+}
+
 let cloudFuncs = {
-  'loadCsv': loadCsvHandler,
+  'uploadProjects': onUploadProjects,
   'isAdmin': UserHandler.onIsAdmin,
   'getAllUsers': getAllUsers,
   'updateUser': updateUserHandler,
 
+  'isVotingOpen': onIsVotingOpen,
+  'setAllowVoting': onSetAllowVoting,
+  'getQueueCreateStatus': onGetQueueCreateStatus,
+
+
   'getVotingData': onGetVotingData,
+  'createAllQueues': onCreateAllQueues,
   'createVoteQueue': onCreateVoteQueue,
   'getVoteQueue': onGetVoteQueue,
   'saveVotes': onSaveVotes,
@@ -46,7 +58,7 @@ function isStringEmpty(string) {
  * CSV
  */ 
 
-async function loadCsvHandler(request) {
+async function onUploadProjects(request) {
   if (!await UserHandler.isAdmin(request.user)) {
     throw new Error('Not admin');
   }
@@ -56,10 +68,10 @@ async function loadCsvHandler(request) {
   }
 
   const csv = decodeURIComponent(request.params.csv);
-  return parseCsv(csv);
+  return parseProjectsCsv(csv);
 }
 
-async function parseCsv(csv) {
+async function parseProjectsCsv(csv) {
   return new Promise((resolve, reject) => {
     let csvParseOptions = {
       columns: true,
@@ -359,6 +371,53 @@ async function updateCriteria(request) {
 * Votes
 */ 
 
+async function onIsVotingOpen(request) {
+  let query = new Parse.Query(Global);
+  let globalSettings = await query.first();
+  if (globalSettings === undefined) {
+    globalSettings = new Global();
+    globalSettings.set(initGlobalSettings);
+    await saveWithMaster(globalSettings);
+  }
+
+  return globalSettings.get('isVotingOpen');
+}
+
+async function onSetAllowVoting(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  const { doOpen } = request.params;
+  let query = new Parse.Query(Global);
+  let globalSettings = await query.first();
+  if (globalSettings.length == 0) {
+    globalSettings = new Global();
+    globalSettings.set(initGlobalSettings);
+  }
+  
+  globalSettings.set('isVotingOpen', doOpen);
+  return globalSettings.save();
+}
+
+async function onGetQueueCreateStatus(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  let queueQuery = new Parse.Query(Queue);
+  let numQueues = await queueQuery.count();
+
+  let userQuery = new Parse.Query(User);
+  userQuery.notEqualTo('username', 'admin');
+  let numUsers = await userQuery.count();
+
+  return {
+    queues: numQueues,
+    users: numUsers,
+  }
+}
+
 async function onSaveVotes(request) {
   const {time, projectObjId, categoryId, scores, isJudgesPick} = request.params;
   const user = request.user;
@@ -440,14 +499,22 @@ async function onGetVotingData(request) {
   let judge = request.user;
   let userCategoryIds = await getCategoryIdsOfJudge(judge);
   let projectsQueue = await getVoteQueue(judge);
-
+  console.log(projectsQueue);
   
   let numPending = 0;
   let progress = {};
   let projectData = {};
   let categoryData = {};
 
-  for (projectId of projectsQueue) {
+  if (!projectsQueue) {
+    return {
+      queue: [],
+      numPending: 0,
+      progress,
+    }
+  }
+
+  for (let projectId of projectsQueue) {
 
     /* Get project data and reduce categories to only ids of judge categories */
 
@@ -505,7 +572,7 @@ async function onGetVotingData(request) {
   let resp = {
     queue: projectsQueue,
     numPending,
-    progress: progress,
+    progress,
   }
 
   if (expand) {
@@ -574,6 +641,29 @@ async function getProjectVotes(user, projectObjId, categoryId) {
     }).catch(err => {
       console.log(err);
     });
+}
+
+async function onCreateAllQueues(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  let queryRole = new Parse.Query(Parse.Role);
+  queryRole.equalTo('name', 'Judge');
+  let judgeRole;
+  judgeRole = await queryRole.first(useMasterKey);
+
+  let judges = await judgeRole.get('users').query().find(useMasterKey);
+  if (!judges || judges.length == 0) {
+    console.warn('onCreateAllQueues called but no judges exist');
+    return 'No judges to create a queue for'
+  }
+
+  for (let judge of judges) {
+      await createVoteQueue(judge);
+  }
+
+  return true;
 }
 
 async function onCreateVoteQueue(request) {
@@ -732,7 +822,7 @@ async function getCategoriesOfJudge(judge) {
     .then((obj) => {
 
       if (obj.length == 0) {
-        return null;
+        return [];
       }
 
       let categories = obj[0].get('categories');

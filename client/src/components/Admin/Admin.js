@@ -1,38 +1,69 @@
 import React from 'react'
+import styled from 'styled-components'
 
 import Projects from './Projects'
 import Criteria from './Criteria'
 import Judges from './Judges'
+import Judges2 from './Judges2'
+import ControlPanel from './ControlPanel'
+
+const PaddedContainer = styled.div`
+  padding: 1.5rem 2rem;
+`
 
 const TabNav = function({tabs, selected, handleTabClick}) {
   return (
-    <ul>
-      { tabs.map(({name, accessor}) => {
-        return (
-          <li key={accessor} className={(selected === accessor) ? "is-active" : undefined}>
-            <a href onClick={() => handleTabClick(accessor)}>
-              {name}
-            </a>
-          </li>
-        )
-      }) }
-    </ul>
+    <div className="tabs is-centered is-marginless">
+      <ul>
+        { tabs.map(({name, accessor}) => {
+          return (
+            <li key={accessor} className={(selected === accessor) ? "is-active" : undefined}>
+              <a href onClick={() => handleTabClick(accessor)}>
+                {name}
+              </a>
+            </li>
+          )
+        }) }
+      </ul>
+    </div>
   )
 }
 
 const TabContents = function({selected}) {
   switch (selected) {
     case 'projects': {
-      return <Projects/>
+      return (
+        <PaddedContainer>
+          <Projects/>
+        </PaddedContainer>
+      )
+    }
+    case 'controlpanel': {
+      return (
+        <PaddedContainer>
+          <ControlPanel/>
+        </PaddedContainer>
+      )
     }
     case 'categories': {
       return 'Categories'
     }
     case 'criteria': {
-      return <Criteria/>
+      return (
+        <PaddedContainer>
+          <Criteria/>
+        </PaddedContainer>
+      )
     }
     case 'judges': {
-      return <Judges/>
+      return (
+        <PaddedContainer>
+          <Judges/>
+        </PaddedContainer>
+      )
+    }
+    case 'judges2': {
+      return <Judges2/>
     }
     default: {
       return 'Nothing here'
@@ -47,6 +78,10 @@ class AdminPage extends React.Component {
 
   tabs = [
     {
+      name: 'Control Panel',
+      accessor: 'controlpanel',
+    },
+    {
       name: 'Projects',
       accessor: 'projects',
     },
@@ -55,13 +90,17 @@ class AdminPage extends React.Component {
       accessor: 'judges',
     },
     {
+      name: 'Judges2',
+      accessor: 'judges2',
+    },
+    {
       name: 'Categories',
       accessor: 'categories',
     },
     {
       name: 'Judging Criteria',
       accessor: 'criteria',
-    }
+    },
   ]
 
   handleTabClick = (tab) => {
@@ -71,21 +110,14 @@ class AdminPage extends React.Component {
   render() {
     return (
       <React.Fragment>
-        <div className="tabs is-centered">
 
-          <TabNav 
-            tabs={ this.tabs }
-            selected={ this.state.activeTab }
-            handleTabClick={ this.handleTabClick }
-          ></TabNav>
+        <TabNav 
+          tabs={ this.tabs }
+          selected={ this.state.activeTab }
+          handleTabClick={ this.handleTabClick }
+        ></TabNav>
 
-        </div>
-
-        <section className="section is-small">
-
-          <TabContents selected={ this.state.activeTab }></TabContents>
-          
-        </section>
+        <TabContents selected={ this.state.activeTab }></TabContents>
 
       </React.Fragment>
     );

@@ -38,7 +38,7 @@ const Scoring = function({
     <div key={currCategoryId} className={ "vote-scores " + (showDescription ? "is-hidden-small" : "") }>
 
       { (categoryIds.length > 1) &&
-        <div class="tabs">
+        <div className="tabs">
           <ul>{Tabs}</ul>
         </div>
       }

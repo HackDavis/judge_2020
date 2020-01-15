@@ -69,6 +69,7 @@ export default class DisplayProject extends React.Component {
 
     let currCategoryId;
     for (let id of this.categoryIds) {
+      console.log(progress)
       if (!progress.isCategoryComplete[id]) {
         currCategoryId = id;
         break;

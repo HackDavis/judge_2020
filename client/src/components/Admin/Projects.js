@@ -1,5 +1,5 @@
 import React from 'react';
-import Parse from 'parse';
+import api from 'ParseApi'
 
 export default class Projects extends React.Component {
   constructor(props) {
@@ -9,10 +9,6 @@ export default class Projects extends React.Component {
     }
     this.handleFileSelect = this.handleFileSelect.bind(this);
     this.handleUpload = this.handleUpload.bind(this);
-  }
-
-  componentDidMount() {
-    
   }
 
   handleFileSelect(event) {
@@ -26,13 +22,13 @@ export default class Projects extends React.Component {
     reader.readAsText(this.selectedFile, "UTF-8");
     reader.onload = function(event) {
       let fileContents = event.target.result;
-      Parse.Cloud.run('loadCsv',{
-        csv: encodeURIComponent(fileContents)
-      }).then(
-        res => {
+      api.uploadProjects(encodeURIComponent(fileContents))
+        .then(res => {
           alert(res);
-        }
-      );
+        }).catch((err) => {
+          console.error(err);
+          alert(`Error: Failed to upload projects`);
+        })
     };
 
     reader.onerror = function(event) {
