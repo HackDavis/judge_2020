@@ -68,10 +68,12 @@ class Voting extends React.Component {
     const nextProjectId = await this.findNextProject();
 
     if (nextProjectId === null) { // none in queue
+      console.log('test')
       this.setState({ sendToCompletionPage: true });
     }
 
     if (nextProjectId === this.state.currProjectId) {
+      console.log('test')
       if (this.state.projectsLeftCount === 0) {
         this.setState({ sendToCompletionPage: true });
       }
@@ -101,8 +103,11 @@ class Voting extends React.Component {
   findNextProject = async () =>  {
     await this.updateVotingData();
 
-    let queue = await api.getVoteQueue();
+    let votingData = await api.getVotingData();
+    let { queue } = votingData;
+
     if (!queue || queue.length === 0) {
+      console.log(queue);
       return null;
     }
 
