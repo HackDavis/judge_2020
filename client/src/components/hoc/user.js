@@ -40,7 +40,6 @@ export default function UserHoc (WrappedComponent, checkAdmin = false) {
 
     render() {
       if (this.state.redirectTo) {
-        console.log('not authorized');
         return <Redirect to={ this.state.redirectTo }/>;
       }
 

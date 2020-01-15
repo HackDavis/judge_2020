@@ -32,7 +32,6 @@ export default class Projects extends React.Component {
     };
 
     reader.onerror = function(event) {
-      console.log("Error reading file");
     };
   }
 

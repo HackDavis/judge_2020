@@ -27,7 +27,6 @@ export default function ControlPanel(){
     if (isVotingOpen === undefined) {
       api.isVotingOpen()
         .then((isVotingOpen) => {
-          console.log(isVotingOpen)
           setVotingOpen(isVotingOpen);
         })
         .catch((err) => {

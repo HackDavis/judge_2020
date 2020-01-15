@@ -87,7 +87,6 @@ const CategoryScores = class extends React.Component {
   loadOldVotes = async () =>  {
     return api.getVotes(this.props.projectId, this.props.categoryId)
       .then((oldVotes)=>{
-        console.log(this.props.projectId, this.props.categoryId, oldVotes);
         if (oldVotes) {
           let loadedScores = oldVotes.votes.reduce((aggr, vote) => {
             let category = vote.category;
@@ -108,7 +107,6 @@ const CategoryScores = class extends React.Component {
         let scores = loaded.scores;
         let hasOldScores = true;
         this.setState({ scores, hasOldScores }, () => {
-          console.log('loaded old scores')
           this.props.onScoreEvent('loadedOldVotes', { categoryId: this.props.categoryId });
         })
         return true;
@@ -172,8 +170,6 @@ const CategoryScores = class extends React.Component {
       } else if (scores[accessor] < 1) {
         newScores[accessor] = 1;
       }
-
-      console.log('blur', maxScore);
 
       return {
         scores: newScores

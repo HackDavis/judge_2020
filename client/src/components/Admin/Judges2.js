@@ -34,7 +34,6 @@ export default class Judges extends React.Component {
         });
       })
       .then((users) => {
-        console.log(users);
         this.judges = users
       })
       .then(() => this.setState({isReady: true}))

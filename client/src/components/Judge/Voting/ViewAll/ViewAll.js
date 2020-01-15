@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React from 'react'
 import ProjectsList from './ProjectsList'
 import api from '../../../../ParseApi'
 // import Nav from './Nav'
@@ -24,9 +24,6 @@ export default function ViewAll({
   onVotingEvent,
   progress
 }) {
-  useEffect(() => {
-    console.log(projects)
-  }, [projects])
 
   return (
     <section className="section voting-container">

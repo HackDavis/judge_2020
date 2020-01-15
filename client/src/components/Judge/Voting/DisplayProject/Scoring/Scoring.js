@@ -9,14 +9,10 @@ const Scoring = function({
   showDescription,
   onScoreEvent
 }) {
-  useEffect(() => {
-    console.log(categoryData);
-    console.log(currCategoryId);
-  }, [categoryData, currCategoryId])
 
-  const Tabs = categoryIds.map( (categoryId, index) => 
+  const Tabs = categoryIds.map( (categoryId) => 
     <li key={categoryId} className={((currCategoryId === categoryId) ? "is-active" : "")}>
-      <a onClick={() => onScoreEvent('changeCategory', {categoryId})}>{categoryData[categoryId].name}</a>
+      <a href onClick={() => onScoreEvent('changeCategory', {categoryId})}>{categoryData[categoryId].name}</a>
     </li>
   );
 

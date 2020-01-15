@@ -24,7 +24,6 @@ export default class Login extends React.Component {
     if(Parse.User.current()) {
       Parse.Cloud.run('isAdmin')
         .then(isAdmin => {
-          console.log(isAdmin);
           this.setState({
             redirectTo: (isAdmin === true) ? '/admin' : '/judge'
           });
@@ -40,7 +39,6 @@ export default class Login extends React.Component {
         this.setState({
           redirectTo: (isAdmin === true) ? '/admin' : '/judge'
         });
-        console.log('redirect' + isAdmin);
       });
     event.preventDefault();
   }

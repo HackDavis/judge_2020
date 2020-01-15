@@ -49,7 +49,6 @@ class Voting extends React.Component {
   getProjects = () => {
     return api.getVotingData(true)
       .then( (votingData) => {
-        console.log(votingData);
         const { queue, projects, categories, progress } = votingData;
 
         this.queue = queue;
@@ -68,12 +67,10 @@ class Voting extends React.Component {
     const nextProjectId = await this.findNextProject();
 
     if (nextProjectId === null) { // none in queue
-      console.log('test')
       this.setState({ sendToCompletionPage: true });
     }
 
     if (nextProjectId === this.state.currProjectId) {
-      console.log('test')
       if (this.state.projectsLeftCount === 0) {
         this.setState({ sendToCompletionPage: true });
       }
@@ -89,7 +86,6 @@ class Voting extends React.Component {
   updateVotingData = async () => {
     return api.getVotingData()
       .then( (votingData) => {
-        console.log(votingData);
         const { numPending, progress } = votingData;
         this.progress = progress;
         this.setState({ projectsLeftCount: numPending });
@@ -107,7 +103,6 @@ class Voting extends React.Component {
     let { queue } = votingData;
 
     if (!queue || queue.length === 0) {
-      console.log(queue);
       return null;
     }
 
@@ -119,10 +114,6 @@ class Voting extends React.Component {
     // Check for incomplete projects after current
     let sliceAfterCurr = queue.slice(posInQ+1);
     let nextProjectId = sliceAfterCurr.find((itemId) => {
-      console.log(itemId);
-      // let project = this.projects[itemId];
-      // return (!project.done);
-
       return !this.progress[itemId].isComplete;
     });
 
@@ -134,9 +125,6 @@ class Voting extends React.Component {
     let sliceBeforeCurr = queue.slice(0, posInQ);
 
     nextProjectId = sliceBeforeCurr.find((itemId) => {
-      console.log(itemId);
-      // let project = this.projects[itemId];
-      // return (!project.done);
       return !this.progress[itemId].isComplete;
     });
 

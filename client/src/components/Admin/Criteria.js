@@ -11,7 +11,6 @@ export default class Criteria extends React.Component {
     isDeletable: rowData => true,
     onRowAdd: newData =>
       new Promise((resolve, reject) => {
-        console.log(newData);
         let {name, accessor, maxScore, description, order} = newData;
         api.createCriterion(name, accessor, description, order, maxScore, this.state.categoryId)
           .then(() => resolve())
@@ -52,7 +51,6 @@ export default class Criteria extends React.Component {
   componentDidMount() {
     api.getCriteria()
       .then((criteria) => {
-        console.log(criteria)
       })
   }
 

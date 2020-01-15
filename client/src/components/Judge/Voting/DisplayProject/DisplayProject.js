@@ -62,21 +62,16 @@ export default class DisplayProject extends React.Component {
         currCategoryId: this.categoryIds[0],
       })
 
-      console.log(this.categoryIds[0]);
-
       return;
     }
 
     let currCategoryId;
     for (let id of this.categoryIds) {
-      console.log(progress)
       if (!progress.isCategoryComplete[id]) {
         currCategoryId = id;
         break;
       }
     }
-
-    console.log(currCategoryId);
 
     this.setState({ currCategoryId })
   }
@@ -99,14 +94,12 @@ export default class DisplayProject extends React.Component {
         break;
       case 'loadedOldVotes':
         this.completedCategoryIds.add(categoryId);
-        console.log(this.completedCategoryIds, this.categoryIds)
         if (this.completedCategoryIds.size === this.categoryIds.length) {
           this.setState({ isProjectDone: true });
         }
         break;
       case 'castedVote':
         this.completedCategoryIds.add(categoryId);
-        console.log(this.completedCategoryIds, this.categoryIds)
         if (this.completedCategoryIds.size === this.categoryIds.length) {
           this.setState({ isProjectDone: true });
           this.props.onVotingEvent('next');

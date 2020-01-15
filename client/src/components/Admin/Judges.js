@@ -149,7 +149,6 @@ export default class Judges extends React.Component {
                 return Promise.all(users.map(mapUser));
                 
               }).then((users) => {
-                console.log(users);
                 return resolve({data: users});
               })
           })

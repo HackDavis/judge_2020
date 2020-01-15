@@ -3,9 +3,7 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 
 function Nav ({onVotingEvent, hasNext}) {
-  useEffect(() => {
-    console.log(hasNext)
-  }, [hasNext])
+  
   return (
     <div className="nav__dp">
       <div className="columns is-mobile">
