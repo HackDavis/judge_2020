@@ -292,7 +292,7 @@ async function onCreateCriterion(request) {
   let {name, description, order, accessor, maxScore, categoryId} = request.params;
 
   try {
-    await validateCriteriaInput(request.params);
+    await validateCriteriaInput(request.params, request.params.objectId);
   } catch (err) {
     throw err;
   }

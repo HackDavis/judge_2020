@@ -25,6 +25,10 @@ export default class CategoryDropdown extends React.Component {
   }
 
   loadCategories = () => {
+    if (this.state.loadedCategories) {
+      return;
+    }
+    
     return api.getAllCategories(true)
       .then((categories) => {
         this.categories = categories.reduce((aggr, category) => {
@@ -43,8 +47,6 @@ export default class CategoryDropdown extends React.Component {
   }
 
   getCategoryName(catId) {
-    console.log(catId);
-    console.log(this.categories);
     return this.categories[catId].name;
   }
 

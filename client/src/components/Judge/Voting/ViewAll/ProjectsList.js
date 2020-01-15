@@ -15,7 +15,7 @@ export default function ProjectsList({
               <span className="project-name">
                 
                   { currProjectId === objectId? (
-                    <a href onClick={() => onVotingEvent('jump', objectId)}><b>{name} (Current)</b></a>
+                    <a href className="current" onClick={() => onVotingEvent('jump', objectId)}>{name} (Current)</a>
                   ) : (
                     <a href onClick={() => onVotingEvent('jump', objectId)}>{name}</a>
                   )}

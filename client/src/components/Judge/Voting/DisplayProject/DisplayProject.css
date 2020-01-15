@@ -1,11 +1,17 @@
+
 ::-webkit-scrollbar {
-  width: 0.7rem;
+  width: 0.3rem;
+  transition: width 0.4s linear;
+}
+
+*:hover::-webkit-scrollbar {
+  width: 0.5rem;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #f0f0f0;
+  background: #ececec;
   background-clip: padding-box;
-  border-radius: 0.35rem;
+  /* border-radius: 0.35rem; */
 }
 
 .padding-1__dp {
@@ -45,6 +51,9 @@ button.toggleDisplay__dp {
   grid-auto-rows: 4em;
   margin: 0.5rem 0;
   scrollbar-width: thin;
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  padding: 0.625em;
 }
 
 .nav-container__dp {
@@ -61,6 +70,7 @@ button.toggleDisplay__dp {
 
 .rubric-title {
   text-align: center;
+  padding: 0.5rem 0;
 }
 
 .tabs a {
@@ -121,6 +131,7 @@ button.toggleDisplay__dp {
 
   .project-description__dp > .control > textarea {
     height: 100%;
+    resize: none;
   }
 
   .voting-panel__dp.main-panel__dp {
@@ -149,22 +160,25 @@ button.toggleDisplay__dp {
 
   .rubric {
     flex: 1;
-    overflow-y: hidden;
+    /* overflow-y: hidden; */
+    overflow-y: auto;
     min-height: 0;
+    /* padding-right: 0.3rem; */
     transition: padding-right 0.2s linear;
-    background:
+
+    /* background:
       linear-gradient(white 10%, hsla(0,0%,100%, 0)),
       linear-gradient(hsla(0,0%,100%,0) 10px, white 50%) bottom,
       radial-gradient(at top, rgba(0,0,0,0.2), transparent 50%), 
       radial-gradient(at bottom, rgba(0,0,0,0.2), transparent 50%) bottom;
     background-repeat:no-repeat;
     background-size: 100% 20px, 100% 20px, 100% 10px, 100% 10px;
-    background-attachment:local, local, scroll, scroll;
+    background-attachment:local, local, scroll, scroll; */
   }
   
   .rubric:hover {
     overflow-y: auto;
-    padding-right: 0.8rem;
+    /* padding-right: 0.8rem; */
   }
 }
 

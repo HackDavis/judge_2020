@@ -27,36 +27,26 @@ export default class Judges extends React.Component {
           });
       }),
     onRowUpdate: (newData, oldData) =>
-    new Promise((resolve, reject) => {
-      let update = {
-        username: newData.username,
-        email: newData.email,
-        display_name: newData.display_name,
-      }
-
-      if (newData.password !== "") {
-        update.password = newData.password;
-      }
-
-      let categories = [];
-      this.categoryIds.forEach((categoryId) => {
-        let key = this.getCategoryKey(categoryId);
-        if (newData[key]) {
-          categories.push(categoryId);
+      new Promise((resolve, reject) => {
+        let update = {
+          username: newData.username,
+          email: newData.email,
+          display_name: newData.display_name,
         }
-      });
 
-      return api.setCategoriesOfJudge(newData.objectId, categories);
+        if (newData.password !== "") {
+          update.password = newData.password;
+        }
 
-      // api.updateUser(newData.objectId, update)
-      //   .then(() => {
-      //     return api.setCategoriesOfJudge(newData.objectId, categories);
-      //   }).then(() => resolve())
-      //   .catch((err) => {
-      //     let errMsg = `Error: Failed to update criterion. ${err}`;
-      //     alert(errMsg)
-      //     reject(errMsg);
-      //   });
+        let categories = [];
+        this.categoryIds.forEach((categoryId) => {
+          let key = this.getCategoryKey(categoryId);
+          if (newData[key]) {
+            categories.push(categoryId);
+          }
+        });
+
+        return api.setCategoriesOfJudge(newData.objectId, categories);
     }),
     onRowDelete: oldData => api.deleteCriteria(oldData.objectId),
   }
@@ -161,6 +151,7 @@ export default class Judges extends React.Component {
         options={{
           paging: false,
           sorting: false,
+          search: false,
         }}
         editable={this.editFuncs}
       />

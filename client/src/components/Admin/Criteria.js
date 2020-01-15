@@ -63,6 +63,7 @@ export default class Criteria extends React.Component {
           return {
             order: item.order,
             name: item.name,
+            accessor: item.accessor,
             description: item.description,
             maxScore: item.maxScore,
           }
