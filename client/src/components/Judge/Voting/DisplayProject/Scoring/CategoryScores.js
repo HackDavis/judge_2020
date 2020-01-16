@@ -46,19 +46,6 @@ const CategoryScores = class extends React.Component {
       });
   }
 
-  componentDidUpdate(prevProps) {
-    if (this.props.projectId !== prevProps.projectId) {
-      this.setState({showDescription: true});
-      this.getProjectCriteria()
-        .then(() => {
-          this.category = this.props.categoryData;
-        })
-        .then(() => {
-          this.initScores();
-        });
-    }
-  }
-
   getProjectCriteria = async () => {
     return api.getVotingCriteria(this.props.categoryId)
       .then((criteria) => {

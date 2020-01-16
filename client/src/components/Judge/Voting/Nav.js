@@ -7,19 +7,22 @@ function Nav ({onVotingEvent, hasNext}) {
   return (
     <div className="nav__dp">
       <div className="columns is-mobile">
-        <div className="column is-half">
+
+        <div className="column">
           <a href
             className="button is-fullwidth is-primary is-outlined"
             onClick={() => onVotingEvent('view-all')}
           >View all projects</a>
         </div>
-          <div className="column is-half">
-            { hasNext ? (
-              <a href className="button is-fullwidth is-primary" onClick={() => onVotingEvent('next')}>Skip for now</a>
-            ) : (
-              <a href className="button is-fullwidth" disabled>No pending projects</a>
-            )}
-          </div>
+
+        <div className="column">
+          { hasNext ? (
+            <a href className="button is-fullwidth is-primary" onClick={() => onVotingEvent('next')}>Skip for now</a>
+          ) : (
+            <a href className="button is-fullwidth" disabled>No pending projects</a>
+          )}
+        </div>
+
       </div>
     </div>
   )

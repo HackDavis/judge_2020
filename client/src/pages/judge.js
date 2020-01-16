@@ -10,8 +10,9 @@ function JudgePage (props){
   return (
     <Router>
       <Route path="/judge" exact render={() => <WelcomeJudge {...props}/>} />
-      <Route path="/judge/vote" exact render={() => <Voting {...props}/>} />
-      <Route path="/judge/projects" render={() => <ViewAll {...props}/>} />
+      <Route path="/judge/vote" exact render={(routeProps) => <Voting {...routeProps} {...props}/>} />
+      <Route path="/judge/vote/:projectId" exact render={(routeProps) => <Voting {...routeProps} {...props}/>} />
+      <Route path="/judge/projects" exact render={(routeProps) => <Voting viewAll {...routeProps} {...props}/>} />
       <Route path="/judge/complete" render={() => <Complete {...props}/>} />
     </Router>
   )

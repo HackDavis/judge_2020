@@ -17,20 +17,40 @@ class Voting extends React.Component {
   categories;
   progress;
   _isMounted;
+  projectsLeftCount;
   
   state = {
     currProjectId: undefined,
-    isProjectsLoaded: false,
+    isReady: false,
     viewAll: false,
-    projectsLeftCount: undefined,
     sendToCompletionPage: false,
   };
   
   componentDidMount() {
 
     // TODO: check if voting open
-    this.getProjects()
-      .then(() => this.findNextProject())
+
+    console.log(this.props);
+
+    return api.getVotingData(true)
+      .then( (votingData) => {
+        const { queue, projects, categories, progress, numPending } = votingData;
+
+        this.queue = queue;
+        this.projects = projects;
+        this.categories = categories;
+        this.progress = progress;
+        this.projectsLeftCount = numPending;
+
+      })
+      .then(() => {
+        if (this.props.match && this.props.match.params.projectId) {
+          return this.props.match.params.projectId;
+        }
+        
+        return this.findNextProject();
+        
+      })
       .then((nextProjectId) => {
         
         if (nextProjectId === null) {
@@ -38,32 +58,20 @@ class Voting extends React.Component {
           return;
         }
 
-        this.setState({
-          currProjectId: nextProjectId,
-        })
-        
-
-      });
-  }
-
-  getProjects = () => {
-    return api.getVotingData(true)
-      .then( (votingData) => {
-        const { queue, projects, categories, progress } = votingData;
-
-        this.queue = queue;
-        this.projects = projects;
-        this.categories = categories;
-        this.progress = progress;
-
-      }).then(() => {
-        this.setState({
-          isProjectsLoaded: true,
-        })
+        this.gotoProject(nextProjectId, { isReady: true });
       })
   }
 
-  gotoNextProject = async () => {
+  gotoProject = (projectId, moreStates) => {
+    this.props.history.push(`/judge/vote/${projectId}`);
+    this.setState({
+      currProjectId: projectId,
+      viewAll: false,
+      ...moreStates
+    });
+  }
+
+  onNext = async () => {
     const nextProjectId = await this.findNextProject();
 
     if (nextProjectId === null) { // none in queue
@@ -71,16 +79,14 @@ class Voting extends React.Component {
     }
 
     if (nextProjectId === this.state.currProjectId) {
-      if (this.state.projectsLeftCount === 0) {
+      if (this.projectsLeftCount === 0) {
         this.setState({ sendToCompletionPage: true });
       }
 
       return;
     }
 
-    this.setState({
-      currProjectId: nextProjectId,
-    });
+    this.gotoProject(nextProjectId);
   }
 
   updateVotingData = async () => {
@@ -88,18 +94,51 @@ class Voting extends React.Component {
       .then( (votingData) => {
         const { numPending, progress } = votingData;
         this.progress = progress;
-        this.setState({ projectsLeftCount: numPending });
-      });
-    // const updateResults = await api.updateCompletionStatus(this.projects);
-    // this.projects = updateResults.projects;
-    // let projectsLeftCount = Object.keys(this.projects).length - updateResults.count;
-    // this.setState({ projectsLeftCount });
+        this.projectsLeftCount = numPending;
+        return votingData;
+      })
+  }
+    
+  onVotingEvent = (val, params) =>  {
+    switch (val) {
+      case 'next': {
+        this.onNext();
+        break;
+      }
+      case 'jump': {
+        const newProjectId = params;
+        this.gotoProject(newProjectId);
+        break;
+      }
+      case 'view-all': {
+        this.updateVotingData()
+          .then(() => {
+            this.setState(state => {
+              return {
+                viewAll: !state.viewAll
+              }
+            });
+          })
+        break;
+      }
+      case 'toggleDesc': {
+        this.setState(state => {
+          return {
+            showingDescription: !state.showingDescription
+          }
+        });
+        break;
+      }
+      case 'updateVotingData': {
+        return this.updateVotingData();
+      }
+      default:
+        break;
+    }
   }
 
   findNextProject = async () =>  {
-    await this.updateVotingData();
-
-    let votingData = await api.getVotingData();
+    let votingData = await this.updateVotingData();
     let { queue } = votingData;
 
     if (!queue || queue.length === 0) {
@@ -136,59 +175,13 @@ class Voting extends React.Component {
     // otherwise return first project
     return currProjectId || queue[0];
   }
-    
-  onVotingEvent = (val, props) =>  {
-    switch (val) {
-      case 'next': {
-        this.gotoNextProject();
-        break;
-      }
-      case 'jump': {
-        const newProjectId = props;
-      
-        this.setState(state => {
-          return {
-            currProjectId: newProjectId,
-            showingDescription: !state.showingDescription,
-            viewAll: false
-          }
-        });
-        break;
-      }
-      case 'view-all': {
-        this.updateVotingData()
-          .then(() => {
-            this.setState(state => {
-              return {
-                viewAll: !state.viewAll
-              }
-            });
-          })
-        break;
-      }
-      case 'toggleDesc': {
-        this.setState(state => {
-          return {
-            showingDescription: !state.showingDescription
-          }
-        });
-        break;
-      }
-      case 'updateVotingData': {
-        return this.updateVotingData();
-        break;
-      }
-      default:
-        break;
-    }
-  }
   
   render() {
     if (this.state.sendToCompletionPage) {
       return <Redirect to="/judge/complete"/>;
     }
 
-    if (!this.state.isProjectsLoaded || this.state.currProjectId === undefined) {
+    if (!this.state.isReady || this.state.currProjectId === undefined) {
       return (
         <section className="section">
           <h1>Please wait...</h1>
@@ -213,7 +206,7 @@ class Voting extends React.Component {
         categoryData={this.categories}
         project={this.projects[this.state.currProjectId]}
         onVotingEvent={this.onVotingEvent}
-        projectsLeftCount={this.state.projectsLeftCount}
+        projectsLeftCount={this.projectsLeftCount}
       />
     )
   }
