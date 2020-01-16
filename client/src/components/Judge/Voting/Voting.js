@@ -58,7 +58,10 @@ class Voting extends React.Component {
           return;
         }
 
-        this.gotoProject(nextProjectId, { isReady: true });
+        this.gotoProject(nextProjectId, {
+          isReady: true,
+          viewAll: this.props.viewAll
+        });
       })
   }
 
