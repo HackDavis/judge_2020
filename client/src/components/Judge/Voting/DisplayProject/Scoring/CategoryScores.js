@@ -29,7 +29,7 @@ const CategoryScores = class extends React.Component {
 
   category = undefined
   scoresBeforeFocus = {};
-  votingCriteria = {}
+  votingCriteria = [];
 
   state = {
     scores: undefined,
@@ -38,7 +38,7 @@ const CategoryScores = class extends React.Component {
 
   componentDidMount() {
     this.getProjectCriteria()
-      .then((category) => {
+      .then(() => {
         this.category = this.props.categoryData;
       })
       .then(() => {
@@ -50,7 +50,7 @@ const CategoryScores = class extends React.Component {
     if (this.props.projectId !== prevProps.projectId) {
       this.setState({showDescription: true});
       this.getProjectCriteria()
-        .then((category) => {
+        .then(() => {
           this.category = this.props.categoryData;
         })
         .then(() => {
@@ -206,7 +206,7 @@ const CategoryScores = class extends React.Component {
       <React.Fragment>
         <h3 className="title is-4 is-marginless rubric-title">{this.category.name}</h3>
         <div className="rubric">
-          { this.votingCriteria.map((criterion, index) => {
+          { this.votingCriteria.map((criterion) => {
             return (
               <IncrementalInput
                 key={criterion.accessor}
