@@ -30,7 +30,7 @@ const api = new ParseServer({
 const dashboard = new ParseDashboard({
   apps: [
     {
-      serverURL: SERVER_URL,
+      serverURL: PUBLIC_SERVER_URL,
       appId: APP_ID,
       masterKey: MASTER_KEY,
       appName: APP_NAME
