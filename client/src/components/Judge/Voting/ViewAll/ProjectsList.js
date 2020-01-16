@@ -1,23 +1,38 @@
 import React from 'react';
-import styled from 'styled-components'
-import './ProjectsList.css'
+import styled, { css } from 'styled-components'
 
 const ProjectRow = styled.div`
   display: flex;
   flex-direction: row;
+  align-items: center;
   padding: 0.5em 0.7em;
+  margin: 0.2rem 0;
   background-color: ${props => props.selected ? '#fff5fc' : 'transparent'};
   font-weight: ${props => props.selected ? 600 : 400};
   color: ${props => props.selected ? '#bb52a0' : 'inherit'};
   border-radius: 4px;
 
-  a {
-    color: inherit;
-  }
+  ${props => !props.selected && css`
+    &:hover {
+      background-color: #fafafa;
+    }
+  `}
+`
+
+const ProjectInfo = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 `
 
 const ProjectName = styled.span`
-  flex: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+`
+
+const ProjectTable = styled.span`
+  font-size: 0.9em;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -27,7 +42,7 @@ const ProgressIndicator = styled.span`
   box-sizing: border-box;
   justify-content: center;
   align-items: center;
-  flex: none;
+  flex: 0 0 85px;
   /* margin-left: 2em; */
   /* background: ${props => props.done ? "#07ce00" : "#ccc"}; */
   background: #fff;
@@ -38,10 +53,9 @@ const ProgressIndicator = styled.span`
   display: inline-flex;
   font-size: 0.65em;
   font-weight: 700;
-  padding: 2px 5px;
+  padding: 0.4em 0.6em;
   text-align: center;  
   text-transform: uppercase;
-  width: 70px;
 `
 
 export default function ProjectsList({
@@ -52,16 +66,22 @@ export default function ProjectsList({
 }) {
   return (
        <div className="container">
-        {Object.values(projects).map(({objectId, name}) => {
+        {Object.values(projects).map(({objectId, name, table}) => {
           return (
             <ProjectRow
               key={objectId}
               selected={objectId === currProjectId}
               onClick={() => onVotingEvent('jump', objectId)}
             >
-              <ProjectName>
-                <a href onClick={() => onVotingEvent('jump', objectId)}>{name}</a>
-              </ProjectName>
+              <ProjectInfo>
+                <ProjectName>
+                  {name}
+                </ProjectName>
+                <ProjectTable>
+                  Table: {table}
+                </ProjectTable>
+
+              </ProjectInfo>
               
                 <ProgressIndicator done={progress[objectId].isComplete}>
                   {progress[objectId].isComplete ? 'Done' : 'Not done'}
