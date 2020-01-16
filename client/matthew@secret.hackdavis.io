@@ -1,3 +1,0 @@
-NODE_PATH=src
-REACT_APP_PARSE_URL=http://localhost:8080/parse
-REACT_APP_APP_ID=H4cCDAvI5eruDVgI
