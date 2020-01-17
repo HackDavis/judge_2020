@@ -1,12 +1,11 @@
 import React from 'react';
 import propTypes from 'prop-types'
-import api from '../../../../ParseApi'
 
 import Nav from '../Nav';
 import ProjectInfo from './ProjectInfo'
-import Scoring from './Scoring'
-import ProjectScores from './Scoring/CategoryScores';
 import CompleteBanner from '../CompleteBanner';
+import CategorySelection from './CategorySelection'
+import Scoring from './Scoring'
 
 import './DisplayProject.css'
 
@@ -28,6 +27,7 @@ export default class DisplayProject extends React.Component {
     showDescription: true,
     isProjectDone: false,
     currCategoryId: undefined,
+    isNavigating: false,
   }
 
   constructor(props) {
@@ -45,12 +45,13 @@ export default class DisplayProject extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (this.props.project !== prevProps.project) {
-      this.setState(this.initialState, () => {
+        this.setState({
+          isProjectDone: false,
+          isNavigating: false,
+        });
         this.completedCategoryIds = new Set();
         this.categoryIds = this.props.project.categories;
         this.updateProgress();
-        this.setState({ ready: true })
-      });
     }
   }
 
@@ -101,8 +102,8 @@ export default class DisplayProject extends React.Component {
       case 'castedVote':
         this.completedCategoryIds.add(categoryId);
         if (this.completedCategoryIds.size === this.categoryIds.length) {
-          this.setState({ isProjectDone: true });
-          this.props.onVotingEvent('next');
+          this.setState({ isProjectDone: true, isNavigating: true, });
+          return this.props.onVotingEvent('next');
         }
 
         this.props.onVotingEvent('updateVotingData')
@@ -126,7 +127,7 @@ export default class DisplayProject extends React.Component {
     return (
       <div className="main-container">
 
-        { (this.props.projectsLeftCount === 0 || this.state.isProjectDone) &&  
+        { (!this.state.isNavigating && (this.props.projectsLeftCount === 0 || this.state.isProjectDone)) &&  
           <CompleteBanner
             isAllDone={(this.props.projectsLeftCount === 0)}
           />
@@ -157,14 +158,26 @@ export default class DisplayProject extends React.Component {
   
             <div className="main-panel__dp voting-panel__dp">
   
-              <Scoring
-                projectId={this.props.project.objectId}
-                categoryData={this.props.categoryData}
-                categoryIds={this.categoryIds}
-                currCategoryId={this.state.currCategoryId}
-                onScoreEvent={this.onScoreEvent}
-                showDescription={this.state.showDescription}
-              />
+              <div className={'vote-scores ' + (this.state.showDescription ? "is-hidden-small" : "") }>
+                {(this.categoryIds.length > 1) &&
+                  <CategorySelection
+                    categoryData={this.props.categoryData}
+                    categoryIds={this.categoryIds}
+                    currCategoryId={this.state.currCategoryId}
+                    onScoreEvent={this.onScoreEvent}
+                  />
+                }
+
+                <div className="category-score">
+                  <Scoring
+                    key={this.state.currCategoryId }
+                    onScoreEvent={this.onScoreEvent}
+                    categoryData={this.props.categoryData[this.state.currCategoryId]}
+                    categoryId={this.state.currCategoryId}
+                    projectId={this.props.project.objectId}
+                  />
+                </div>
+              </div>
   
               <div className="nav-container__dp nav-mobile__dp">
                 <Nav

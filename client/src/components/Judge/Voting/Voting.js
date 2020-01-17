@@ -1,17 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Redirect } from 'react-router-dom';
-import Parse from 'parse';
 import api from '../../../ParseApi';
 import DisplayProject from './DisplayProject';
 import ViewAll from './ViewAll';
 
 class Voting extends React.Component {
-  static propTypes = {
-    state: PropTypes.object,
-    dispatch: PropTypes.func,
-  }
-  
   queue;
   projects;
   categories;
@@ -29,8 +22,6 @@ class Voting extends React.Component {
   componentDidMount() {
 
     // TODO: check if voting open
-
-    console.log(this.props);
 
     return api.getVotingData(true)
       .then( (votingData) => {
@@ -60,13 +51,13 @@ class Voting extends React.Component {
 
         this.gotoProject(nextProjectId, {
           isReady: true,
-          viewAll: this.props.viewAll
         });
       })
   }
 
   gotoProject = (projectId, moreStates) => {
     this.props.history.push(`/judge/vote/${projectId}`);
+    window.scrollTo(0, 0);
     this.setState({
       currProjectId: projectId,
       viewAll: false,

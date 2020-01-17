@@ -17,6 +17,12 @@ code {
     monospace;
 }
 
+@media screen and (max-width: 1023px) {
+  #root {
+    padding-bottom: 5rem;
+  }
+}
+
 .main-container {
   width: 100vw;
   display: flex;

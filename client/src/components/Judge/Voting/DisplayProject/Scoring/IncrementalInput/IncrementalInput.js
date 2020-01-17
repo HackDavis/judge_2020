@@ -7,7 +7,6 @@ const IncrementalInput = function ({
   criterion,
   scoreIn,
   onInputEvent,
-  hasNext,
 }) {
   const [score, setScore] = useState(scoreIn);
   const incremental = delta => onInputEvent('incremental', {criterion, delta});
@@ -21,7 +20,6 @@ const IncrementalInput = function ({
 
   return (
     <RubricRow
-      hasNext={hasNext}
       TitleElement={
         <React.Fragment>
           <div className="rubric-item-name">{criterion.name}</div>
@@ -54,7 +52,6 @@ IncrementalInput.propTypes = {
   criterion: propTypes.object.isRequired,
   scoreIn: propTypes.number.isRequired,
   onInputEvent: propTypes.func.isRequired,
-  hasNext: propTypes.bool,
 }
 
 export default IncrementalInput;
