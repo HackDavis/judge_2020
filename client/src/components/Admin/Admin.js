@@ -4,8 +4,9 @@ import styled from 'styled-components'
 import Projects from './Projects'
 import Criteria from './Criteria'
 import Judges from './Judges'
-import Judges2 from './Judges2'
+import CreateJudges from './CreateJudges'
 import ControlPanel from './ControlPanel'
+import Queues from './Queues'
 
 const PaddedContainer = styled.div`
   padding: 1.5rem 2rem;
@@ -48,6 +49,9 @@ const TabContents = function({selected}) {
     case 'categories': {
       return 'Categories'
     }
+    case 'queues': {
+      return <Queues/>
+    }
     case 'criteria': {
       return (
         <PaddedContainer>
@@ -62,8 +66,8 @@ const TabContents = function({selected}) {
         </PaddedContainer>
       )
     }
-    case 'judges2': {
-      return <Judges2/>
+    case 'createjudges': {
+      return <CreateJudges/>
     }
     default: {
       return 'Nothing here'
@@ -86,16 +90,20 @@ class AdminPage extends React.Component {
       accessor: 'projects',
     },
     {
+      name: 'Create Judges',
+      accessor: 'createjudges',
+    },
+    {
       name: 'Judges',
       accessor: 'judges',
     },
     {
-      name: 'Judges2',
-      accessor: 'judges2',
-    },
-    {
       name: 'Categories',
       accessor: 'categories',
+    },
+    {
+      name: 'Queues',
+      accessor: 'queues',
     },
     {
       name: 'Judging Criteria',

@@ -1,21 +1,12 @@
-import React, {useState, useEffect} from 'react';
-import api from 'ParseApi'
+import React from 'react'
+import styled from 'styled-components'
+import api from '../../ParseApi'
 
-const CSV = function(props) {
-  const [csv, setCsv] = useState('')
+const Container = styled.div`
+  padding: 3rem;
+`
 
-  useEffect(() => {
-    api.run('exportProjectsToCsv')
-      .then((_csv) => {
-        setCsv(_csv);
-      })
-  }, [csv])
-
-  return (
-    <textarea className="textarea" readOnly value={csv}/>
-  )
-}
-export default class Projects extends React.Component {
+export default class CreateJudges extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -36,12 +27,12 @@ export default class Projects extends React.Component {
     reader.readAsText(this.selectedFile, "UTF-8");
     reader.onload = function(event) {
       let fileContents = event.target.result;
-      api.uploadProjects(encodeURIComponent(fileContents))
+      api.run('importJudgesCsv', {csv: encodeURIComponent(fileContents)})
         .then(res => {
           alert(res);
         }).catch((err) => {
           console.error(err);
-          alert(`Error: Failed to upload projects`);
+          alert(`Error: Failed to upload judges`);
         })
     };
 
@@ -51,7 +42,10 @@ export default class Projects extends React.Component {
 
   render() {
     return (
-      <React.Fragment>
+      <Container>
+
+        <a href="/csv/users.csv">Download template</a>
+
         <div className="field file has-name">
           <label className="file-label">
             <input className="file-input" type="file" name="projects" onChange={this.handleFileSelect}/>
@@ -60,7 +54,7 @@ export default class Projects extends React.Component {
                 <i className="fas fa-upload"></i>
               </span>
               <span className="file-label">
-                Choose a file…
+                Choose a file… (user.csv)
               </span>
             </span>
             <span className="file-name">
@@ -69,12 +63,10 @@ export default class Projects extends React.Component {
           </label>
         </div>
         <div className="field">
-          <button onClick={this.handleUpload} className="button is-primary">Upload (Deletes old projects)</button>
+          <button onClick={this.handleUpload} className="button is-primary">Upload</button>
         </div>
 
-        <CSV/>
-
-      </React.Fragment>
+      </Container>
     )
   }
 }

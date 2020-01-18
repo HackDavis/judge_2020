@@ -2,10 +2,8 @@ const dotenv = require('dotenv');
 const dotenvExpand = require('dotenv-expand')
 dotenvExpand(dotenv.config());
 const express = require('express');
-const ParseServer = require('parse-server').ParseServer;
+const { default: ParseServer, ParseGraphQLServer } = require('parse-server');
 const ParseDashboard = require('parse-dashboard');
-
-const initDb = require('./db/init.js');
 
 const APP_NAME = 'HackDavis Judging';
 
@@ -15,9 +13,7 @@ const PARSE_PORT = process.env.PARSE_PORT;
 const SERVER_URL = process.env.PARSE_SERVER_URL;
 const PUBLIC_SERVER_URL = process.env.PUBLIC_PARSE_SERVER_URL;
 
-const DO_DB_INIT = process.argv.includes('initdb');
-
-const api = new ParseServer({
+const parseServer = new ParseServer({
   databaseURI: process.env.MONGODB_URL, // Connection string for your MongoDB database
   cloud: './cloud/main.js', // Absolute path to your Cloud Code
   appId: APP_ID,
@@ -27,25 +23,36 @@ const api = new ParseServer({
   allowClientClassCreation: false,
 });
 
+// Create the GraphQL Server Instance
+const parseGraphQLServer = new ParseGraphQLServer(
+  parseServer,
+  {
+    graphQLPath: '/graphql',
+    playgroundPath: '/playground'
+  }
+);
+
 const dashboard = new ParseDashboard({
   apps: [
     {
       serverURL: PUBLIC_SERVER_URL,
       appId: APP_ID,
       masterKey: MASTER_KEY,
-      appName: APP_NAME
+      appName: APP_NAME,
+      graphQLServerURL: "http://localhost:8080/graphql"
     }
   ]
 });
 
 const app = express();
-app.use('/parse', api);
+app.use('/parse', parseServer.app);
+// Mounts the GraphQL API using graphQLPath: '/graphql'
+parseGraphQLServer.applyGraphQL(app);
+// (Optional) Mounts the GraphQL Playground - do NOT use in Production
+// parseGraphQLServer.applyPlayground(app);
 app.use('/dashboard', dashboard);
 
 const httpServer = require('http').createServer(app);
 httpServer.listen(PARSE_PORT, () => {
   console.log('Now listening on port ' + PARSE_PORT);
-  if (DO_DB_INIT) {
-    initDb();
-  }
 });

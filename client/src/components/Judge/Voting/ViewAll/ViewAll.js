@@ -33,7 +33,7 @@ export default function ViewAll({
   currProjectId,
   projects,
   onVotingEvent,
-  progress
+  progress,
 }) {
 
   return (

@@ -1,6 +1,10 @@
 import Parse from 'parse';
 
 export default class ParseApi {
+  static run(func, opts) {
+    return Parse.Cloud.run(func, opts);
+  }
+
   static isAdmin() {
     return Parse.Cloud.run('isAdmin');
   }

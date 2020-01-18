@@ -1,6 +1,7 @@
+const { ExportToCsv } = require('export-to-csv')
 const UserHandler = require('./User')
 const JudgeHandler = require('./Judge')
-const { saveWithMaster } = require('./util');
+const { saveWithMaster, generateRandomPassword, generateUsername } = require('./util');
 
 const {useMasterKey, User, Project, Category, Vote, Queue, JudgingCriteria, JudgeToCategory, Global} = require('./common');
 
@@ -16,11 +17,15 @@ let cloudFuncs = {
   'isAdmin': UserHandler.onIsAdmin,
   'getAllUsers': getAllUsers,
   'updateUser': updateUserHandler,
+  'exportProjectsToCsv': onExportProjectsToCsv,
+  'exportQueuesToCsv': onExportQueuesToCsv,
+  // 'exportAssignTemplate': onExportAssignTemplate, // todo
+  'importJudgesCsv': onImportJudgesCsv,
+  'deleteAllJudges': onDeleteAllJudges,
 
   'isVotingOpen': onIsVotingOpen,
   'setAllowVoting': onSetAllowVoting,
   'getQueueCreateStatus': onGetQueueCreateStatus,
-
 
   'getVotingData': onGetVotingData,
   'createAllQueues': onCreateAllQueues,
@@ -31,7 +36,7 @@ let cloudFuncs = {
   'getJudgesPick': onGetJudgesPick,
 
   'getProjects': onGetProjects,
-  'getAllProjects': getAllProjects,
+  'getAllProjects': onGetAllProjects,
   'getProject': onGetProject,
 
   'getCriteria': onGetCriteria,
@@ -87,7 +92,8 @@ async function parseProjectsCsv(csv) {
         }
   
         let projects = [];
-        for (_project of parsedOutput) {
+        let i = 0;
+        for (let _project of parsedOutput) {
           // todo: ignore empty rows
           if (_project.categories.trim().length > 0) {
             let categoryNames = _project.categories.split(',')
@@ -105,6 +111,7 @@ async function parseProjectsCsv(csv) {
 
           let project = new Project();
           project.set(_project);
+          project.set('order', i++);
           projects.push(project);
         }
 
@@ -143,6 +150,128 @@ async function deleteOldProjects() {
   return Promise.all(deletePromises);
 }
 
+async function onExportProjectsToCsv(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  let projectsQuery = new Parse.Query(Project);
+  projectsQuery.limit(1000);
+  let _projects = await projectsQuery.find();
+  if (_projects.length == 0) {
+    return '';
+  }
+
+  let projects = [];
+  for (let project of _projects) {
+    project = project.toJSON();
+    let categoryIds = [];
+    let categoryNames = [];
+    if (project.categories && project.categories.length) {
+      categoryIds = project.categories.map((obj) => obj.objectId);
+      if (categoryIds.length > 0) {
+        for (let categoryId of categoryIds) {
+          let name = await (await getCategory(categoryId)).get('name');
+          categoryNames.push(name);
+        }
+      }
+    }
+
+    project = {
+      id: project.objectId,
+      name: project.name,
+      table: project.table,
+      categoryNames: categoryNames.toString(),
+      categoryIds: categoryIds.toString(),
+    }
+
+    projects.push(project);
+  }
+
+  const options = { 
+    fieldSeparator: ',',
+    quoteStrings: '"',
+    decimalSeparator: '.',
+    showLabels: true, 
+    showTitle: false,
+    useTextFile: false,
+    useBom: true,
+    useKeysAsHeaders: true,
+  };
+ 
+  const csvExporter = new ExportToCsv(options, true);
+  
+  let csv = csvExporter.generateCsv(projects, true);
+  console.log(csv)
+  return csv;
+}
+
+async function onExportQueuesToCsv(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  let queueQuery = new Parse.Query(Queue);
+  queueQuery.limit(1000);
+  let _queues = await queueQuery.find();
+  if (_queues.length == 0) {
+    return '';
+  }
+
+  let rows = [];
+  for (let queue of _queues) {
+    
+    let judgeId = queue.get('user').id;
+    let judgeQuery = new Parse.Query(User);
+    let judge = await judgeQuery.get(judgeId, useMasterKey);
+    let judgeName = judge.get('username');
+
+    let projects = queue.get('items');
+    let userRows = [];
+    for (let project of projects) {
+      let projectData = await getProject(project);
+      let projectName = projectData.get('name');
+      let projectTable = projectData.get('table');
+      let order = projectData.get('order');
+
+      let row = {
+        judgeId,
+        judgeName,
+        projectName,
+        projectTable,
+        order,
+      }
+
+      userRows.push(row);
+    }
+
+    userRows.sort((a, b) => {
+      return a.order - b.order;
+    })
+
+    for (let row of userRows) {
+      rows.push(row);
+    }
+  }
+
+  const options = { 
+    fieldSeparator: ',',
+    quoteStrings: '"',
+    decimalSeparator: '.',
+    showLabels: true, 
+    showTitle: false,
+    useTextFile: false,
+    useBom: true,
+    useKeysAsHeaders: true,
+  };
+ 
+  const csvExporter = new ExportToCsv(options, true);
+  
+  let csv = csvExporter.generateCsv(rows, true);
+  console.log(csv)
+  return csv;
+}
+
 async function getAllUsers(request) {
   if (!await UserHandler.isAdmin(request.user)) {
     throw new Error('Not admin');
@@ -166,6 +295,100 @@ async function getAllUsers(request) {
 
 async function updateUserHandler(request) {
   // todo: implement
+}
+
+// 'importJudgesCsv': onImportJudgesCsv,
+//   'exportAssignTemplate': onExportAssignTemplate,
+async function onImportJudgesCsv(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  if (!request.params.csv) {
+    throw new Error('No CSV file included')
+  }
+
+  const csv = decodeURIComponent(request.params.csv);
+  return importJudgesCsv(csv);
+}
+
+async function onDeleteAllJudges(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  return deleteAllJudges();
+}
+
+async function deleteAllJudges() {
+  let userQuery = new Parse.Query(User);
+  userQuery.notEqualTo('username', 'admin');
+  let users = await userQuery.find(useMasterKey);
+  let deletePromises = users.map((obj) => {
+    return obj.destroy(useMasterKey)
+  })
+  
+  return Promise.all(deletePromises);
+}
+
+function importJudgesCsv(csv) {
+  return new Promise((resolve, reject) => {
+    let csvParseOptions = {
+      from_line: 2,
+      relax_column_count: true
+    }
+
+    csvParse(csv, csvParseOptions,
+      async (err, parsedOutput) => {
+
+        if (err) {
+          reject('CSV Error:', err.message);
+          return;
+        }
+
+        await deleteAllJudges();
+  
+        let usernameCollisions = {};
+        let usernames = new Set();
+        for (let row of parsedOutput) {
+          let [first, last, association, email] = row;
+
+          if (email.length == 0) {
+            email = undefined;
+          }
+
+          let username = generateUsername(first, last);
+          if (!usernames.has(username)) {
+            usernames.add(username);
+            usernameCollisions[username] = 0;
+          } else {
+            usernameCollisions[username] = usernameCollisions[username] + 1;
+            username = username + usernameCollisions[username];
+          }
+
+          let {password, easyRead} = generateRandomPassword();
+          var user = new Parse.User();
+          user.set({
+            username,
+            password,
+            easyRead,
+            association,
+            email,
+            display_name: first+' '+last,
+          });
+
+          try {
+            await user.signUp(null, useMasterKey);
+          } catch (error) {
+            console.error("Error: " + error.code + " " + error.message);
+            reject(error);
+          }
+        }
+
+        resolve(`Success: Created ${parsedOutput.length} users`);
+      }
+    );
+  });
 }
 
 /*
@@ -742,11 +965,14 @@ async function onGetProjects(request) {
   return projects;
 }
 
-async function getAllProjects(request) {
+async function onGetAllProjects(request) {
   if (!await UserHandler.isAdmin(request.user)) {
     throw new Error('Not admin');
   }
 
+  return getAllProjects();
+}
+async function getAllProjects() {
   let query = new Parse.Query(Project);
   query.limit(1000);
   return query.find()

@@ -38,7 +38,6 @@ const Scoring = class extends React.Component {
   }
 
   componentDidMount() {
-    console.log('cat scores mount')
     this.getProjectCriteria()
       .then(() => {
         this.category = this.props.categoryData;
@@ -72,6 +71,12 @@ const Scoring = class extends React.Component {
   getProjectCriteria = async () => {
     return api.getVotingCriteria(this.props.categoryId)
       .then((criteria) => {
+        criteria.sort((a,b) => {
+          let depriortizeWeight = criteria.length
+          let a_val = a.order + (a.isGeneral ? 0 : depriortizeWeight);
+          let b_val = b.order + (b.isGeneral ? 0 : depriortizeWeight);
+          return a_val - b_val;
+        })
         this.votingCriteria = criteria;
         this.setState({criteriaLoaded: true})
       })
