@@ -2,6 +2,7 @@ import React from 'react'
 // import PropTypes from 'prop-types'
 import MaterialTable from 'material-table'
 import api from '../../ParseApi'
+import * as Styles from './Styles'
 
 const CategoriesField = function(props) {
   return (
@@ -118,48 +119,52 @@ export default class Judges extends React.Component {
     }
 
     return (
-      <MaterialTable
-        title='Judging Criteria'
-        columns={this.tableColumns}
-        data={query =>
-          new Promise((resolve, reject) => {
-            api.getAllUsers()
-              .then((users) => {
+      <Styles.Container>
 
-                let mapUser = async (item) => {
-                  let userData = {
-                    username: item.username,
-                    password: '',
-                    email: item.email,
-                    display_name: item.display_name,
-                    objectId: item.objectId
-                  }
+        <MaterialTable
+          title='Judging Criteria'
+          columns={this.tableColumns}
+          data={query =>
+            new Promise((resolve, reject) => {
+              api.getAllUsers()
+                .then((users) => {
+  
+                  let mapUser = async (item) => {
+                    let userData = {
+                      username: item.username,
+                      password: '',
+                      email: item.email,
+                      display_name: item.display_name,
+                      objectId: item.objectId
+                    }
+  
+                    let categories = await api.getCategoriesOfJudge(item.objectId);
+                    if(categories) {
+                      categories.forEach((categoryId) => {
+                        let key = this.getCategoryKey(categoryId);
+                        userData[key] = true;
+                      })
+                    }
+  
+                    return userData;
+                  };
+  
+                  return Promise.all(users.map(mapUser));
+                  
+                }).then((users) => {
+                  return resolve({data: users});
+                })
+            })
+          }
+          options={{
+            paging: false,
+            sorting: false,
+            search: false,
+          }}
+          editable={this.editFuncs}
+        />
 
-                  let categories = await api.getCategoriesOfJudge(item.objectId);
-                  if(categories) {
-                    categories.forEach((categoryId) => {
-                      let key = this.getCategoryKey(categoryId);
-                      userData[key] = true;
-                    })
-                  }
-
-                  return userData;
-                };
-
-                return Promise.all(users.map(mapUser));
-                
-              }).then((users) => {
-                return resolve({data: users});
-              })
-          })
-        }
-        options={{
-          paging: false,
-          sorting: false,
-          search: false,
-        }}
-        editable={this.editFuncs}
-      />
+      </Styles.Container>
     )
   }
 }

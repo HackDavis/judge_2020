@@ -2,6 +2,7 @@ import React from 'react'
 // import PropTypes from 'prop-types'
 import api from '../../ParseApi'
 import MaterialTable, { MTableToolbar } from 'material-table'
+import * as Styles from './Styles'
 
 import CategoryDropdown from './CategoryDropdown'
 
@@ -82,37 +83,41 @@ export default class Criteria extends React.Component {
 
   render() {
     return (
-      <MaterialTable
-        tableRef={this.tableRef}
-        components={{
-          Toolbar: props => (
-            <div>
-              <MTableToolbar {...props} />
-              <div style={{padding: '0px 10px'}}>
-                <CategoryDropdown
-                  onSelect={this.onSelect}
-                  selected={this.state.categoryId}
-                />
+      <Styles.Container>
+
+        <MaterialTable
+          tableRef={this.tableRef}
+          components={{
+            Toolbar: props => (
+              <div>
+                <MTableToolbar {...props} />
+                <div style={{padding: '0px 10px'}}>
+                  <CategoryDropdown
+                    onSelect={this.onSelect}
+                    selected={this.state.categoryId}
+                  />
+                </div>
               </div>
-            </div>
-          ),
-        }}
-        title='Judging Criteria'
-        data={this.getCriteria}
-        columns={[
-          { title: 'Order', field: 'order', type: 'numeric' },
-          { title: 'Name', field: 'name' },
-          { title: 'accessor', field: 'accessor' },
-          { title: 'Description', field: 'description' },
-          { title: 'Max Score', field: 'maxScore', type: 'numeric' },
-        ]}
-        options={{
-          paging: false,
-          sorting: false,
-          search: false,
-        }}
-        editable={this.editFuncs}
-      />
+            ),
+          }}
+          title='Judging Criteria'
+          data={this.getCriteria}
+          columns={[
+            { title: 'Order', field: 'order', type: 'numeric' },
+            { title: 'Name', field: 'name' },
+            { title: 'accessor', field: 'accessor' },
+            { title: 'Description', field: 'description' },
+            { title: 'Max Score', field: 'maxScore', type: 'numeric' },
+          ]}
+          options={{
+            paging: false,
+            sorting: false,
+            search: false,
+          }}
+          editable={this.editFuncs}
+        />
+
+      </Styles.Container>
     )
   }
 }

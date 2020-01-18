@@ -1,7 +1,8 @@
 const { ExportToCsv } = require('export-to-csv')
 const UserHandler = require('./User')
 const JudgeHandler = require('./Judge')
-const { saveWithMaster, generateRandomPassword, generateUsername } = require('./util');
+const utils = require('./util')
+const sanitize = require('./sanitize')
 
 const {useMasterKey, User, Project, Category, Vote, Queue, JudgingCriteria, JudgeToCategory, Global} = require('./common');
 
@@ -19,9 +20,12 @@ let cloudFuncs = {
   'updateUser': updateUserHandler,
   'exportProjectsToCsv': onExportProjectsToCsv,
   'exportQueuesToCsv': onExportQueuesToCsv,
-  // 'exportAssignTemplate': onExportAssignTemplate, // todo
   'importJudgesCsv': onImportJudgesCsv,
   'deleteAllJudges': onDeleteAllJudges,
+
+  'createAssignCsv': onCreateAssignCsv,
+  'createJudgesCsv': onCreateJudgesCsv,
+  'importAssignCsv': onImportAssignCsv,
 
   'isVotingOpen': onIsVotingOpen,
   'setAllowVoting': onSetAllowVoting,
@@ -297,8 +301,6 @@ async function updateUserHandler(request) {
   // todo: implement
 }
 
-// 'importJudgesCsv': onImportJudgesCsv,
-//   'exportAssignTemplate': onExportAssignTemplate,
 async function onImportJudgesCsv(request) {
   if (!await UserHandler.isAdmin(request.user)) {
     throw new Error('Not admin');
@@ -348,6 +350,11 @@ function importJudgesCsv(csv) {
 
         await deleteAllJudges();
   
+        let queryRole = new Parse.Query(Parse.Role);
+        queryRole.equalTo('name', 'Judge');
+        let judgeRole;
+        judgeRole = await queryRole.first(useMasterKey);
+
         let usernameCollisions = {};
         let usernames = new Set();
         for (let row of parsedOutput) {
@@ -357,7 +364,7 @@ function importJudgesCsv(csv) {
             email = undefined;
           }
 
-          let username = generateUsername(first, last);
+          let username = utils.generateUsername(first, last);
           if (!usernames.has(username)) {
             usernames.add(username);
             usernameCollisions[username] = 0;
@@ -366,7 +373,7 @@ function importJudgesCsv(csv) {
             username = username + usernameCollisions[username];
           }
 
-          let {password, easyRead} = generateRandomPassword();
+          let {password, easyRead} = utils.generateRandomPassword();
           var user = new Parse.User();
           user.set({
             username,
@@ -377,15 +384,226 @@ function importJudgesCsv(csv) {
             display_name: first+' '+last,
           });
 
-          try {
-            await user.signUp(null, useMasterKey);
-          } catch (error) {
-            console.error("Error: " + error.code + " " + error.message);
-            reject(error);
-          }
+          let userCreated = await user.signUp(null, useMasterKey);
+          let relation = judgeRole.relation('users');
+          relation.add(userCreated);
         }
 
+        await judgeRole.save(null, useMasterKey);
         resolve(`Success: Created ${parsedOutput.length} users`);
+      }
+    );
+  });
+}
+
+async function onCreateAssignCsv(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  let { categoryId } = request.params;
+
+  const projectsQuery = new Parse.Query(Project);
+  const pointer = new Category();
+  pointer.id = categoryId;
+  projectsQuery.equalTo('categories', pointer);
+  let projects = await projectsQuery.find(useMasterKey);
+  projects.sort((a,b) => {
+    return a.get('order') - b.get('order');
+  })
+  let rows = projects.map((project) => {
+    return {
+      categoryId,
+      projectId: project.id,
+      order: project.get('order'),
+      table: project.get('table'),
+      projectName: project.get('name'),
+      judge1: '',
+      judge2: '',
+    }
+  });
+
+  const options = { 
+    fieldSeparator: ',',
+    quoteStrings: '"',
+    decimalSeparator: '.',
+    showLabels: true, 
+    showTitle: false,
+    useTextFile: false,
+    useBom: true,
+    useKeysAsHeaders: true,
+  };
+ 
+  const csvExporter = new ExportToCsv(options, true);
+  
+  let category = await getCategory(categoryId);
+  let catName = category.get('name').replace(/\s/g,'');
+
+  let csv = csvExporter.generateCsv(rows, true);
+  let filename = sanitize(catName);
+  let file = new Parse.File(`projects_${filename}.csv`, {base64: utils.btoa(csv)});
+  await file.save();
+  
+  await deleteAssignCsv(categoryId);
+
+  let projectsCsv = new Parse.Object('ProjectsCsv');
+  projectsCsv.set({ category, file });
+  await projectsCsv.save(null, useMasterKey);
+
+  return file.url();
+}
+
+async function deleteAssignCsv(categoryId) {
+  let ptr = new Category();
+  ptr.id = categoryId;
+
+  let query = new Parse.Query('ProjectsCsv');
+  query.equalTo('category', ptr);
+  let result = await query.first();
+  if (result === undefined) {
+    return true;
+  }
+
+  return result.destroy(useMasterKey);
+}
+
+async function onCreateJudgesCsv(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  let { categoryId } = request.params;
+
+  const judges = await getJudgesOfCategory(categoryId);
+
+  if (judges.length == 0) {
+    throw new Error('No judges for this category');
+  }
+  
+  let rows = judges.map((judge) => {
+    return {
+      id: judge.id,
+      association: judge.get('association'),
+      username: judge.get('username'),
+    }
+  });
+
+  const options = { 
+    fieldSeparator: ',',
+    quoteStrings: '"',
+    decimalSeparator: '.',
+    showLabels: true, 
+    showTitle: false,
+    useTextFile: false,
+    useBom: true,
+    useKeysAsHeaders: true,
+  };
+ 
+  const csvExporter = new ExportToCsv(options, true);
+  
+  let category = await getCategory(categoryId);
+  let catName = category.get('name').replace(/\s/g,'');
+
+  let csv = csvExporter.generateCsv(rows, true);
+  let filename = sanitize(catName);
+  let file = new Parse.File(`judges_${filename}.csv`, {base64: utils.btoa(csv)});
+  await file.save();
+  
+  await deleteJudgesCsv(categoryId);
+
+  let judgesCsv = new Parse.Object('JudgesCsv');
+  judgesCsv.set({ category, file });
+  await judgesCsv.save(null, useMasterKey);
+
+  return file.url();
+}
+
+async function deleteJudgesCsv(categoryId) {
+  let ptr = new Category();
+  ptr.id = categoryId;
+
+  let query = new Parse.Query('JudgesCsv');
+  query.equalTo('category', ptr);
+  let result = await query.first();
+  if (result === undefined) {
+    return true;
+  }
+
+  return result.destroy(useMasterKey);
+}
+
+async function onImportAssignCsv(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  if (!request.params.csv) {
+    throw new Error('No CSV file included')
+  }
+
+  const csv = decodeURIComponent(request.params.csv);
+
+  return new Promise((resolve, reject) => {
+    let csvParseOptions = {
+      from_line: 2,
+      relax_column_count: true
+    }
+
+    csvParse(csv, csvParseOptions,
+      async (err, parsedOutput) => {
+
+        if (err) {
+          reject('CSV Error:', err.message);
+          return;
+        }
+
+        let assigns = {};
+
+        const categoryId = parsedOutput[0][0];
+        const judges = await getJudgesOfCategory(categoryId);
+        for (let judge of judges) {
+          let phases = await getVotePhases(judge);
+          assigns[judge.get('username')] = phases;
+        }
+
+        for (let row of parsedOutput) {
+          let [_0, projectId, order, _3, _4] = row;
+
+          let judges = row.slice(5);
+
+          // phase 1
+          if (judges[0].length > 0) {
+            let username = judges[0];
+            if (!assigns[username][0].includes(projectId)) {
+              assigns[username][0].push(projectId);
+            }
+
+            // Remove from phase 2, because it's in phase 1
+            let inPhase2 = assigns[username][1].indexOf(projectId)
+            if (inPhase2 !== -1) {
+              assigns[username][1].splice(inPhase2, 1);
+            }
+          }
+
+          // phase 2
+          if (judges[1].length > 0) {
+            let username = judges[1];
+            // Not in phase 2 already, and not in phase 1
+            if (!assigns[username][1].includes(projectId) && !assigns[username][0].includes(projectId)) {
+              assigns[username][1].push(projectId);
+            }
+          }
+
+        }
+
+        for (let [username, phases] of Object.entries(assigns)) {
+          let userQuery = new Parse.Query(User);
+          userQuery.equalTo('username', username);
+          let user = await userQuery.first(useMasterKey);
+          await assignPhases(user, phases[0], phases[1]);
+        }
+
+        resolve('Succesfully assigned new projects');
       }
     );
   });
@@ -600,7 +818,7 @@ async function onIsVotingOpen(request) {
   if (globalSettings === undefined) {
     globalSettings = new Global();
     globalSettings.set(initGlobalSettings);
-    await saveWithMaster(globalSettings);
+    await utils.saveWithMaster(globalSettings);
   }
 
   return globalSettings.get('isVotingOpen');
@@ -646,13 +864,6 @@ async function onSaveVotes(request) {
   const user = request.user;
 
   let project;
-
-  if (isJudgesPick) {
-    let existingPick = await getJudgesPick(user, categoryId);
-    if (existingPick !== null && existingPick.id !== projectObjId) {
-      throw new Error('Judge\'s pick already selected');
-    }
-  }
 
   return new Parse.Query(Project).get(projectObjId, useMasterKey)
     .then(retrieved => {
@@ -721,23 +932,23 @@ async function onGetVotingData(request) {
   let { expand } = request.params; // expand projects and categories
   let judge = request.user;
   let userCategoryIds = await getCategoryIdsOfJudge(judge);
-  let projectsQueue = await getVoteQueue(judge);
-  console.log(projectsQueue);
+  // let projectsQueue = await getVoteQueue(judge);
+  let phases = await getVotePhases(judge);
   
   let numPending = 0;
   let progress = {};
   let projectData = {};
   let categoryData = {};
 
-  if (!projectsQueue) {
+  if (phases[0].length === 0) {
     return {
-      queue: [],
+      phases,
       numPending: 0,
       progress,
     }
   }
 
-  for (let projectId of projectsQueue) {
+  for (let projectId of [...phases[0], ...phases[1]]) {
 
     /* Get project data and reduce categories to only ids of judge categories */
 
@@ -793,7 +1004,7 @@ async function onGetVotingData(request) {
   }
 
   let resp = {
-    queue: projectsQueue,
+    phases,
     numPending,
     progress,
   }
@@ -929,6 +1140,17 @@ async function createVoteQueue(user) {
     }).catch(err => console.log(err));
 }
 
+async function assignPhases(user, phase1, phase2) {
+  const queryExisting = new Parse.Query(Queue);
+  queryExisting.equalTo('user', user);
+  queryExisting.limit(1000);
+  const existing = await queryExisting.find(useMasterKey);
+
+  const queue = existing.length ? existing[0] : new Queue();
+  queue.set({user, phase1, phase2});
+  return queue.save(null, useMasterKey);
+}
+
 /*
  * Projects
  */ 
@@ -951,6 +1173,29 @@ async function getVoteQueue(user) {
 
       let items = queues[0].get('items');
       return items;
+    }).catch(err => console.log(err));
+}
+
+async function onGetVotePhases(request) {
+  const { user } = request.params;
+  return getVotePhases(user);
+}
+
+async function getVotePhases(user) {
+  const query = new Parse.Query(Queue);
+  query.equalTo('user', user);
+  query.limit(1000);
+  return query
+    .first(useMasterKey)
+    .then(queue => {
+      let phase1 = [];
+      let phase2 = [];
+      if (queue) {
+        phase1 = queue.get('phase1') || phase1;
+        phase2 = queue.get('phase2') || phase2;
+      }
+
+      return [phase1, phase2]
     }).catch(err => console.log(err));
 }
 
@@ -1022,6 +1267,16 @@ async function getCategoryIdsOfProject(projectId) {
     });
 }
 
+async function getJudgesOfCategory(categoryId) {
+  const judgesQuery = new Parse.Query(User);
+  const pointer = new Category();
+  pointer.id = categoryId;
+  judgesQuery.equalTo('categories', pointer);
+  let judges = await judgesQuery.find(useMasterKey);
+
+  return judges;
+}
+
 async function onGetCategoriesOfJudge(request) {
   let judge;
 
@@ -1042,20 +1297,11 @@ async function onGetCategoriesOfJudge(request) {
 }
 
 async function getCategoriesOfJudge(judge) {
-  let query = new Parse.Query(JudgeToCategory);
-  query.equalTo('judge', judge);
-  let ret = query.find(useMasterKey)
-    .then((obj) => {
+  if (judge.get('categories') === undefined) {
+    return [];
+  }
 
-      if (obj.length == 0) {
-        return [];
-      }
-
-      let categories = obj[0].get('categories');
-      return categories;
-    })
-
-  return ret;
+  return judge.get('categories');
 }
 
 async function getCategoryIdsOfJudge(judge) {

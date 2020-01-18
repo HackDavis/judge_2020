@@ -6,11 +6,7 @@ import Criteria from './Criteria'
 import Judges from './Judges'
 import CreateJudges from './CreateJudges'
 import ControlPanel from './ControlPanel'
-import Queues from './Queues'
-
-const PaddedContainer = styled.div`
-  padding: 1.5rem 2rem;
-`
+import Assignments from './Assignments'
 
 const TabNav = function({tabs, selected, handleTabClick}) {
   return (
@@ -33,38 +29,21 @@ const TabNav = function({tabs, selected, handleTabClick}) {
 const TabContents = function({selected}) {
   switch (selected) {
     case 'projects': {
-      return (
-        <PaddedContainer>
-          <Projects/>
-        </PaddedContainer>
-      )
+      return <Projects/>
     }
     case 'controlpanel': {
       return (
-        <PaddedContainer>
           <ControlPanel/>
-        </PaddedContainer>
       )
     }
-    case 'categories': {
-      return 'Categories'
-    }
-    case 'queues': {
-      return <Queues/>
+    case 'assignments': {
+      return <Assignments/>
     }
     case 'criteria': {
-      return (
-        <PaddedContainer>
-          <Criteria/>
-        </PaddedContainer>
-      )
+      return <Criteria/>
     }
     case 'judges': {
-      return (
-        <PaddedContainer>
-          <Judges/>
-        </PaddedContainer>
-      )
+      return <Judges/>
     }
     case 'createjudges': {
       return <CreateJudges/>
@@ -77,17 +56,13 @@ const TabContents = function({selected}) {
 
 class AdminPage extends React.Component {
   state = {
-    activeTab: 'projects',
+    activeTab: 'controlpanel',
   }
 
   tabs = [
     {
       name: 'Control Panel',
       accessor: 'controlpanel',
-    },
-    {
-      name: 'Projects',
-      accessor: 'projects',
     },
     {
       name: 'Create Judges',
@@ -98,16 +73,16 @@ class AdminPage extends React.Component {
       accessor: 'judges',
     },
     {
-      name: 'Categories',
-      accessor: 'categories',
-    },
-    {
-      name: 'Queues',
-      accessor: 'queues',
-    },
-    {
       name: 'Judging Criteria',
       accessor: 'criteria',
+    },
+    {
+      name: 'Projects',
+      accessor: 'projects',
+    },
+    {
+      name: 'Assignments',
+      accessor: 'assignments',
     },
   ]
 

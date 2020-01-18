@@ -1,12 +1,12 @@
-import React, {useState, useEffect} from 'react';
-import api from 'ParseApi'
+import React, {useState, useEffect} from 'react'
+import api from '../../ParseApi'
 import * as Styles from './Styles'
 
 const CSV = function(props) {
   const [csv, setCsv] = useState('')
 
   useEffect(() => {
-    api.run('exportProjectsToCsv')
+    api.run('exportQueuesToCsv')
       .then((_csv) => {
         setCsv(_csv);
       })
@@ -16,7 +16,7 @@ const CSV = function(props) {
     <textarea className="textarea" readOnly value={csv}/>
   )
 }
-export default class Projects extends React.Component {
+export default class Assignments extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -37,12 +37,12 @@ export default class Projects extends React.Component {
     reader.readAsText(this.selectedFile, "UTF-8");
     reader.onload = function(event) {
       let fileContents = event.target.result;
-      api.uploadProjects(encodeURIComponent(fileContents))
-        .then(res => {
-          alert(res);
+      api.run('importAssignCsv', {csv: encodeURIComponent(fileContents)})
+        .then(url => {
+          alert(url);
         }).catch((err) => {
           console.error(err);
-          alert(`Error: Failed to upload projects`);
+          alert(`Error: Failed to upload assignments`);
         })
     };
 
@@ -53,7 +53,6 @@ export default class Projects extends React.Component {
   render() {
     return (
       <Styles.Container>
-
         <div className="field file has-name">
           <label className="file-label">
             <input className="file-input" type="file" name="projects" onChange={this.handleFileSelect}/>
@@ -71,7 +70,7 @@ export default class Projects extends React.Component {
           </label>
         </div>
         <div className="field">
-          <button onClick={this.handleUpload} className="button is-primary">Upload (Deletes old projects)</button>
+          <button onClick={this.handleUpload} className="button is-primary">Upload</button>
         </div>
 
         <CSV/>

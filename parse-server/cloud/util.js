@@ -31,4 +31,11 @@ module.exports = class util {
     return username;
   }
 
+  static btoa(data) {
+    let buff = Buffer.from(data);
+    let base64data = buff.toString('base64');
+    
+    return base64data;
+  }
+
 }

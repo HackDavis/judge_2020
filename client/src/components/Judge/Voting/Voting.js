@@ -25,9 +25,12 @@ class Voting extends React.Component {
 
     return api.getVotingData(true)
       .then( (votingData) => {
-        const { queue, projects, categories, progress, numPending } = votingData;
+        const { phases, projects, categories, progress, numPending } = votingData;
 
-        this.queue = queue;
+        let phase0 = this.sortPhase(phases[0], projects);
+        let phase1 = this.sortPhase(phases[1], projects);
+
+        this.queue = [...phase0, ...phase1];
         this.projects = projects;
         this.categories = categories;
         this.progress = progress;
@@ -53,6 +56,14 @@ class Voting extends React.Component {
           isReady: true,
         });
       })
+  }
+
+  sortPhase = (phaseItems, projects) => {
+    let sorted = phaseItems.sort((a,b) => {
+      return projects[a].order - projects[b].order;
+    })
+
+    return sorted;
   }
 
   gotoProject = (projectId, moreStates) => {
@@ -133,7 +144,11 @@ class Voting extends React.Component {
 
   findNextProject = async () =>  {
     let votingData = await this.updateVotingData();
-    let { queue } = votingData;
+    let { phases } = votingData;
+    let phase0 = this.sortPhase(phases[0], this.projects);
+    let phase1 = this.sortPhase(phases[1], this.projects);
+
+    let queue = [...phase0, ...phase1];
 
     if (!queue || queue.length === 0) {
       return null;

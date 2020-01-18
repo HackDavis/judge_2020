@@ -1,9 +1,10 @@
 import React from 'react'
 import styled from 'styled-components'
 import api from '../../ParseApi'
+import * as Styles from './Styles'
 
-const Container = styled.div`
-  padding: 3rem;
+const LinkTemplate = styled.div`
+  margin: 1em 0;
 `
 
 export default class CreateJudges extends React.Component {
@@ -42,9 +43,11 @@ export default class CreateJudges extends React.Component {
 
   render() {
     return (
-      <Container>
+      <Styles.Container>
 
-        <a href="/csv/users.csv">Download template</a>
+        <LinkTemplate>
+          <a href="/csv/users.csv">Download template</a>
+        </LinkTemplate>
 
         <div className="field file has-name">
           <label className="file-label">
@@ -66,7 +69,7 @@ export default class CreateJudges extends React.Component {
           <button onClick={this.handleUpload} className="button is-primary">Upload</button>
         </div>
 
-      </Container>
+      </Styles.Container>
     )
   }
 }
