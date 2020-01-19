@@ -137,9 +137,12 @@ const Scoring = class extends React.Component {
 
     return api.castVotes(this.props.projectId, this.props.categoryId, this.state.scores)
       .then(() => {
+        return this.props.onScoreEvent('castedVote', { categoryId: this.props.categoryId });
+      })
+      .then(() => {
         this.setState({isCastingVote: false})
-        this.props.onScoreEvent('castedVote', { categoryId: this.props.categoryId });
-      }).catch((err) => {
+      })
+      .catch((err) => {
         this.setState({isCastingVote: false})
         alert(`Error: Failed to cast votes. Err: ${err}`);
       })

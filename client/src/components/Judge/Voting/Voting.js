@@ -1,9 +1,15 @@
 import React from 'react';
+import styled from 'styled-components'
 import { Redirect } from 'react-router-dom';
 import api from '../../../ParseApi';
 import DisplayProject from './DisplayProject';
 import ViewAll from './ViewAll';
 
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: 1.5em;
+`
 class Voting extends React.Component {
   queue;
   projects;
@@ -21,9 +27,7 @@ class Voting extends React.Component {
   
   componentDidMount() {
 
-    // TODO: check if voting open
-
-    return api.getVotingData(true)
+    api.getVotingData(true)
       .then( (votingData) => {
         const { phases, projects, categories, progress, numPending } = votingData;
 
@@ -91,7 +95,7 @@ class Voting extends React.Component {
       return;
     }
 
-    this.gotoProject(nextProjectId);
+    return this.gotoProject(nextProjectId);
   }
 
   updateVotingData = async () => {
@@ -107,8 +111,7 @@ class Voting extends React.Component {
   onVotingEvent = (val, params) =>  {
     switch (val) {
       case 'next': {
-        this.onNext();
-        break;
+        return this.onNext();
       }
       case 'jump': {
         const newProjectId = params;
@@ -196,6 +199,17 @@ class Voting extends React.Component {
           <h1>Please wait...</h1>
         </section>
       );
+    }
+
+    if (this.state.blocked) {
+      return (
+        <Container>
+
+          <h1 className="is-2">Voting is not open yet.</h1>
+          <span>When a director says that voting has started, you can refresh this page.</span>
+
+        </Container>
+      )
     }
 
     if (this.state.viewAll) {
