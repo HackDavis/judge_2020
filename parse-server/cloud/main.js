@@ -19,13 +19,14 @@ let cloudFuncs = {
   'getAllUsers': getAllUsers,
   'updateUser': updateUserHandler,
   'exportProjectsToCsv': onExportProjectsToCsv,
-  'exportQueuesToCsv': onExportQueuesToCsv,
   'importJudgesCsv': onImportJudgesCsv,
   'deleteAllJudges': onDeleteAllJudges,
 
   'createAssignCsv': onCreateAssignCsv,
   'createJudgesCsv': onCreateJudgesCsv,
   'importAssignCsv': onImportAssignCsv,
+  'exportProjectAssigns': onExportProjectAssigns,
+  'exportUserQueues': onExportUserQueues,
 
   'isVotingOpen': onIsVotingOpen,
   'setAllowVoting': onSetAllowVoting,
@@ -210,7 +211,7 @@ async function onExportProjectsToCsv(request) {
   return csv;
 }
 
-async function onExportQueuesToCsv(request) {
+async function onExportUserQueuesToCsv(request) {
   if (!await UserHandler.isAdmin(request.user)) {
     throw new Error('Not admin');
   }
@@ -408,9 +409,15 @@ async function onCreateAssignCsv(request) {
   pointer.id = categoryId;
   projectsQuery.equalTo('categories', pointer);
   let projects = await projectsQuery.find(useMasterKey);
+
+  if (projects.length == 0) {
+    throw new Error('No projects for this category')
+  }
+
   projects.sort((a,b) => {
     return a.get('order') - b.get('order');
   })
+
   let rows = projects.map((project) => {
     return {
       categoryId,
@@ -607,6 +614,134 @@ async function onImportAssignCsv(request) {
       }
     );
   });
+}
+
+async function onExportProjectAssigns(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  let header = ["categoryId", "projectId", "order", "table", "categoryName", "projectName", "phase1", "phase2"]
+  let rows = [header];
+
+  let { categoryIds } = request.params;
+  for (let cId of categoryIds) {
+    let category = await getCategory(cId);
+
+    let projectQ = new Parse.Query(Project);
+    let ptr = new Category();
+    ptr.id = cId;
+    projectQ.equalTo('categories', ptr);
+    let projects = await projectQ.find(useMasterKey);
+
+    for (let project of projects) {
+      let query1 = new Parse.Query(Queue);
+      query1.equalTo('phase1', project.id);
+      let phase1 = await query1.find(useMasterKey);
+      let judges1 = [];
+      for (let queue of phase1) {
+        let user = await queue.get('user').fetch(useMasterKey)
+        judges1.push(user.get('username'))
+      }
+
+      let query2 = new Parse.Query(Queue);
+      query2.equalTo('phase2', project.id);
+      let phase2 = await query2.find(useMasterKey);
+      let judges2 = [];
+      for (let queue of phase2) {
+        let user = await queue.get('user').fetch(useMasterKey)
+        judges2.push(user.get('username'))
+      }
+
+      let row = [
+        cId, project.id,
+        project.get('order'), project.get('table'),
+        category.get('name'), project.get('name'),
+        judges1.toString(), judges2.toString()
+      ];
+
+      rows.push(row);
+    }
+
+  }
+
+  const options = { 
+    fieldSeparator: ',',
+    quoteStrings: '"',
+    decimalSeparator: '.',
+    // showLabels: true, 
+    showTitle: false,
+    useTextFile: false,
+    useBom: true,
+    // useKeysAsHeaders: true,
+  };
+ 
+  const csvExporter = new ExportToCsv(options, true);
+  let csv = csvExporter.generateCsv(rows, true);
+  let file = new Parse.File(`projects.csv`, {base64: utils.btoa(csv)});
+  await file.save();
+
+  let tempFile = new Parse.Object('TempFile');
+  tempFile.set({ file });
+  await tempFile.save(null, useMasterKey);
+
+  return file.url();
+}
+
+async function onExportUserQueues(request) {
+  if (!await UserHandler.isAdmin(request.user)) {
+    throw new Error('Not admin');
+  }
+
+  let { userId } = request.params;
+
+  let header = ["userId", "projectId", "username", "order", "table", "projectName"]
+  let rows = [header];
+
+  let queueQ = new Parse.Query(Queue);
+  let ptr = new User();
+  ptr.id = userId;
+  queueQ.equalTo('user', ptr);
+
+  let qEntry = await queueQ.first(useMasterKey);
+
+  let user = await new Parse.Query(User).get(userId, useMasterKey);
+
+  let queue = [...qEntry.get('phase1'), ...qEntry.get('phase2')];
+
+  for (let projectId of queue) {
+    let project = await getProject(projectId);
+    
+    let row = [
+      userId, project.id, user.get('username'),
+      project.get('order'), project.get('table'), project.get('name')
+    ];
+
+    rows.push(row);
+
+  }
+
+  const options = { 
+    fieldSeparator: ',',
+    quoteStrings: '"',
+    decimalSeparator: '.',
+    // showLabels: true, 
+    showTitle: false,
+    useTextFile: false,
+    useBom: true,
+    // useKeysAsHeaders: true,
+  };
+ 
+  const csvExporter = new ExportToCsv(options, true);
+  let csv = csvExporter.generateCsv(rows, true);
+  let file = new Parse.File(`queue_${user.get('username')}.csv`, {base64: utils.btoa(csv)});
+  await file.save();
+
+  let tempFile = new Parse.Object('TempFile');
+  tempFile.set({ file });
+  await tempFile.save(null, useMasterKey);
+
+  return file.url();
 }
 
 /*
