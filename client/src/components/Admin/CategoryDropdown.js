@@ -10,14 +10,14 @@ export default class CategoryDropdown extends React.Component {
 
   static propTypes = {
     onSelect: propTypes.func.isRequired,
-    selected: propTypes.string
+    selected: propTypes.string,
+    defaultText: propTypes.string
   }
 
   categories = {};
 
   componentDidMount() {
-    
-    
+    this.loadCategories();
   }
 
   componentDidUpdate() {
@@ -51,7 +51,11 @@ export default class CategoryDropdown extends React.Component {
   }
 
   onSelect = (catId) => {
-    this.props.onSelect(catId);
+    this.setState({
+      active: false,
+    }, () => {
+      this.props.onSelect(catId);
+    })
   }
 
   render() {
@@ -74,7 +78,7 @@ export default class CategoryDropdown extends React.Component {
       <div className={`dropdown ${(this.state.active ? "is-active" : "")}`}>
         <div className="dropdown-trigger">
           <button className="button" aria-haspopup="true" aria-controls="dropdown-menu" onClick={this.toggleActive}>
-            <span>{this.props.selected === null ? "General" : (this.getCategoryName(this.props.selected))}</span>
+            <span>{this.props.selected === null ? this.props.defaultText || "General" : (this.getCategoryName(this.props.selected))}</span>
             <span className="icon is-small">
               <i className="fas fa-angle-down" aria-hidden="true"></i>
             </span>
@@ -86,7 +90,7 @@ export default class CategoryDropdown extends React.Component {
               className={`dropdown-item ${((this.props.selected === null) ? "is-active" : "")}`}
               onClick={() => this.onSelect(null)}
             >
-              General
+              {this.props.defaultText || "General"}
             </a>
             <hr className="dropdown-divider"/>
             { Object.values(this.categories).map((category) => 

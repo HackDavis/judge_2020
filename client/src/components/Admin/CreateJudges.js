@@ -3,10 +3,6 @@ import styled from 'styled-components'
 import api from '../../ParseApi'
 import * as Styles from './Styles'
 
-const LinkTemplate = styled.div`
-  margin: 1em 0;
-`
-
 export default class CreateJudges extends React.Component {
   constructor(props) {
     super(props);
@@ -45,9 +41,9 @@ export default class CreateJudges extends React.Component {
     return (
       <Styles.Container>
 
-        <LinkTemplate>
+        <Styles.MarginVertical>
           <a href="/csv/users.csv">Download template</a>
-        </LinkTemplate>
+        </Styles.MarginVertical>
 
         <div className="field file has-name">
           <label className="file-label">

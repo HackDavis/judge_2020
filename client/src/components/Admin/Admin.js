@@ -7,6 +7,7 @@ import Judges from './Judges'
 import CreateJudges from './CreateJudges'
 import ControlPanel from './ControlPanel'
 import Assignments from './Assignments'
+import Exports from './Exports'
 
 const TabNav = function({tabs, selected, handleTabClick}) {
   return (
@@ -48,6 +49,9 @@ const TabContents = function({selected}) {
     case 'createjudges': {
       return <CreateJudges/>
     }
+    case 'exports': {
+      return <Exports/>
+    }
     default: {
       return 'Nothing here'
     }
@@ -83,6 +87,10 @@ class AdminPage extends React.Component {
     {
       name: 'Assignments',
       accessor: 'assignments',
+    },
+    {
+      name: 'Export Data',
+      accessor: 'exports',
     },
   ]
 
