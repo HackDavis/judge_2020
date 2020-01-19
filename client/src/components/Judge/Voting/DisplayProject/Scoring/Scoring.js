@@ -5,15 +5,15 @@ import IncrementalInput from './IncrementalInput';
 
 import api from '../../../../../ParseApi'
 
-const CastVotesButton = function({castVotes}) {
+const CastVotesButton = function({castVotes, isPending}) {
   return (
     <div className="cast-votes">
       <div className="buttons">
-        <a href className="button is-fullwidth is-primary" 
+        <button className={"button is-fullwidth is-primary " + (isPending && 'is-loading')}
           onClick={castVotes}
         >
           Cast Vote
-        </a>
+        </button>
       </div>
     </div>
   );
@@ -35,6 +35,7 @@ const Scoring = class extends React.Component {
     scores: undefined,
     criteriaLoaded: false,
     rubricReady: false,
+    isCastingVote: false,
   }
 
   componentDidMount() {
@@ -131,11 +132,15 @@ const Scoring = class extends React.Component {
       });
   }
 
-  castVotes = async () =>  {
+  castVotes = () =>  {
+    this.setState({ isCastingVote: true })
+
     return api.castVotes(this.props.projectId, this.props.categoryId, this.state.scores)
       .then(() => {
+        this.setState({isCastingVote: false})
         this.props.onScoreEvent('castedVote', { categoryId: this.props.categoryId });
       }).catch((err) => {
+        this.setState({isCastingVote: false})
         alert(`Error: Failed to cast votes. Err: ${err}`);
       })
   }
@@ -237,6 +242,7 @@ const Scoring = class extends React.Component {
         </div>
   
         <CastVotesButton
+          isPending={this.state.isCastingVote}
           castVotes={() => this.castVotes()}
         />
   
