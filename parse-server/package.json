@@ -17,7 +17,7 @@
     "export-to-csv": "^0.2.1",
     "express": "^4.17.1",
     "parse-dashboard": "^1.4.1",
-    "parse-server": "^3.6.0",
+    "parse-server": "^4.10.17",
     "truncate-utf8-bytes": "^1.0.2"
   },
   "devDependencies": {
